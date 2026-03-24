@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Star, BookOpen, Gamepad2, User, CheckCircle, XCircle, RotateCw, Video, Play } from 'lucide-react';
+import { Star, BookOpen, Gamepad2, User, CheckCircle, XCircle, RotateCw, Video, Play, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Question {
@@ -469,6 +469,10 @@ const TeacherPublicPage = () => {
                       </div>
                       <CardContent className="p-4">
                         <h3 className="font-semibold truncate">{v.title}</h3>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{v.views || 0} مشاهدة</span>
+                        </div>
                       </CardContent>
                     </Card>
                   );
