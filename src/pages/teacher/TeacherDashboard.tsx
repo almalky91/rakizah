@@ -11,6 +11,16 @@ import { toast } from 'sonner';
 
 const TeacherDashboard = () => {
   const { signOut, user } = useAuth();
+  const [copied, setCopied] = useState(false);
+
+  const publicLink = `${window.location.origin}/teacher/${user?.id}`;
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(publicLink);
+    setCopied(true);
+    toast.success('تم نسخ الرابط');
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="min-h-screen bg-background">
