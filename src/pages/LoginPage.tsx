@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { Star, ShieldCheck, GraduationCap, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,11 +24,40 @@ const LoginPage = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
+  const roleMap: Record<string, string> = {
+    admin: 'admin',
+    teacher: 'teacher',
+    student: 'student',
+  };
+
+  const roleLabelMap: Record<string, string> = {
+    admin: 'مدير نظام',
+    teacher: 'كادر تعليمي',
+    student: 'طالب',
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await signIn(email, password);
+
+      // Verify role matches selected tab
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '')
+        .single();
+
+      const userRole = data?.role || 'student';
+      const expectedRole = roleMap[activeTab];
+
+      if (userRole !== expectedRole) {
+        await supabase.auth.signOut();
+        toast.error(`هذا الحساب ليس حساب ${roleLabelMap[activeTab]}. يرجى اختيار التبويب الصحيح.`);
+        return;
+      }
+
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/dashboard');
     } catch (err: any) {
