@@ -70,27 +70,77 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          page_title: string | null
+          school_name: string | null
           updated_at: string
         }
         Insert: {
+          bio?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
+          page_title?: string | null
+          school_name?: string | null
           updated_at?: string
         }
         Update: {
+          bio?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          page_title?: string | null
+          school_name?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      public_quiz_results: {
+        Row: {
+          answers: Json | null
+          created_at: string
+          id: string
+          quiz_id: string
+          score: number
+          student_name: string
+          teacher_id: string
+          total_questions: number
+        }
+        Insert: {
+          answers?: Json | null
+          created_at?: string
+          id?: string
+          quiz_id: string
+          score: number
+          student_name: string
+          teacher_id: string
+          total_questions: number
+        }
+        Update: {
+          answers?: Json | null
+          created_at?: string
+          id?: string
+          quiz_id?: string
+          score?: number
+          student_name?: string
+          teacher_id?: string
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_quiz_results_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quiz_results: {
         Row: {
