@@ -8,6 +8,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardRouter from "./pages/DashboardRouter";
+import TeacherPublicPage from "./pages/teacher/TeacherPublicPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/dashboard" element={<DashboardRouter />} />
+            <Route path="/teacher/:teacherId" element={<TeacherPublicPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

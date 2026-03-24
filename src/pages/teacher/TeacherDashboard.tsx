@@ -2,14 +2,25 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Video, BookOpen, Gamepad2, BarChart3, LogOut, Star } from 'lucide-react';
+import { Video, BookOpen, Gamepad2, BarChart3, LogOut, Star, Link2, Copy, Check } from 'lucide-react';
 import VideoCenter from '@/components/teacher/VideoCenter';
 import QuizCenter from '@/components/teacher/QuizCenter';
 import GameCenter from '@/components/teacher/GameCenter';
 import PerformanceBoard from '@/components/teacher/PerformanceBoard';
+import { toast } from 'sonner';
 
 const TeacherDashboard = () => {
   const { signOut, user } = useAuth();
+  const [copied, setCopied] = useState(false);
+
+  const publicLink = `${window.location.origin}/teacher/${user?.id}`;
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(publicLink);
+    setCopied(true);
+    toast.success('تم نسخ الرابط');
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -24,10 +35,16 @@ const TeacherDashboard = () => {
               <p className="text-sm text-primary-foreground/60">{user?.user_metadata?.full_name || 'معلم'}</p>
             </div>
           </div>
-          <Button variant="ghost" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
-            <LogOut className="w-4 h-4 ml-2" />
-            تسجيل الخروج
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={copyLink} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 gap-1">
+              {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+              <span className="hidden sm:inline">{copied ? 'تم النسخ' : 'رابط الصفحة'}</span>
+            </Button>
+            <Button variant="ghost" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+              <LogOut className="w-4 h-4 ml-2" />
+              <span className="hidden sm:inline">تسجيل الخروج</span>
+            </Button>
+          </div>
         </div>
       </header>
 
