@@ -29,11 +29,20 @@ interface Game {
   config: any;
 }
 
+interface VideoItem {
+  id: string;
+  title: string;
+  youtube_url: string;
+  views: number;
+}
+
 const TeacherPublicPage = () => {
   const { teacherId } = useParams<{ teacherId: string }>();
   const [teacherName, setTeacherName] = useState('');
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [games, setGames] = useState<Game[]>([]);
+  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [studentName, setStudentName] = useState('');
   const [nameConfirmed, setNameConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -59,14 +68,16 @@ const TeacherPublicPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!teacherId) return;
-      const [profileRes, quizzesRes, gamesRes] = await Promise.all([
+      const [profileRes, quizzesRes, gamesRes, videosRes] = await Promise.all([
         supabase.from('profiles').select('full_name').eq('id', teacherId).single(),
         supabase.from('quizzes').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
         supabase.from('games').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
+        supabase.from('videos').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
       ]);
       setTeacherName(profileRes.data?.full_name || 'معلم');
       setQuizzes((quizzesRes.data as any) || []);
       setGames((gamesRes.data as any) || []);
+      setVideos((videosRes.data as any) || []);
       setLoading(false);
     };
     fetchData();
@@ -365,7 +376,7 @@ const TeacherPublicPage = () => {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         <Tabs defaultValue="quizzes" dir="rtl">
-          <TabsList className="grid grid-cols-2 w-full max-w-sm mx-auto mb-8 h-auto">
+          <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto mb-8 h-auto">
             <TabsTrigger value="quizzes" className="flex items-center gap-2 py-3">
               <BookOpen className="w-4 h-4" />
               الاختبارات
@@ -373,6 +384,10 @@ const TeacherPublicPage = () => {
             <TabsTrigger value="games" className="flex items-center gap-2 py-3">
               <Gamepad2 className="w-4 h-4" />
               الألعاب
+            </TabsTrigger>
+            <TabsTrigger value="videos" className="flex items-center gap-2 py-3">
+              <Video className="w-4 h-4" />
+              الفيديوهات
             </TabsTrigger>
           </TabsList>
 
@@ -416,6 +431,48 @@ const TeacherPublicPage = () => {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="videos">
+            {videos.length === 0 ? (
+              <Card><CardContent className="text-center py-12 text-muted-foreground">
+                <Video className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                <p>لا توجد فيديوهات متاحة حالياً</p>
+              </CardContent></Card>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {videos.map(v => {
+                  const ytMatch = v.youtube_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+                  const ytId = ytMatch ? ytMatch[1] : null;
+                  return (
+                    <Card key={v.id} className="overflow-hidden group cursor-pointer" onClick={() => setPlayingVideo(playingVideo === v.id ? null : v.id)}>
+                      <div className="aspect-video bg-muted relative">
+                        {playingVideo === v.id && ytId ? (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+                            className="w-full h-full"
+                            allow="autoplay; encrypted-media"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <>
+                            {ytId && <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`} alt={v.title} className="w-full h-full object-cover" />}
+                            <div className="absolute inset-0 flex items-center justify-center bg-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="w-14 h-14 rounded-full gradient-primary flex items-center justify-center">
+                                <Play className="w-7 h-7 text-primary-foreground" />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold truncate">{v.title}</h3>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
