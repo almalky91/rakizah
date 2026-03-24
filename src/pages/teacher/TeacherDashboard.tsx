@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Video, BookOpen, Gamepad2, BarChart3, LogOut, Star } from 'lucide-react';
+import { Video, BookOpen, Gamepad2, BarChart3, LogOut, Star, Link2, Copy, Check } from 'lucide-react';
 import VideoCenter from '@/components/teacher/VideoCenter';
 import QuizCenter from '@/components/teacher/QuizCenter';
 import GameCenter from '@/components/teacher/GameCenter';
 import PerformanceBoard from '@/components/teacher/PerformanceBoard';
+import { toast } from 'sonner';
 
 const TeacherDashboard = () => {
   const { signOut, user } = useAuth();
