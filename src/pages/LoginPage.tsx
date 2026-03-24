@@ -4,14 +4,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { Star } from 'lucide-react';
+import { Star, ShieldCheck, GraduationCap, Users } from 'lucide-react';
 import { toast } from 'sonner';
+
+const tabs = [
+  { value: 'admin', label: 'مدير نظام', icon: ShieldCheck },
+  { value: 'teacher', label: 'كادر تعليمي', icon: GraduationCap },
+  { value: 'student', label: 'طلبة', icon: Users },
+];
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('student');
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -32,7 +40,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4">
       <Card className="w-full max-w-md glass">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pb-2">
           <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4">
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
               <Star className="w-6 h-6 text-primary-foreground" />
@@ -42,6 +50,24 @@ const LoginPage = () => {
           <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
         </CardHeader>
         <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6" dir="rtl">
+            <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+              {tabs.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="flex flex-col items-center gap-1 py-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">البريد الإلكتروني</Label>
@@ -54,10 +80,12 @@ const LoginPage = () => {
             <Button type="submit" variant="hero" className="w-full" disabled={loading}>
               {loading ? 'جاري التسجيل...' : 'تسجيل الدخول'}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              ليس لديك حساب؟{' '}
-              <Link to="/register" className="text-primary font-medium hover:underline">إنشاء حساب</Link>
-            </p>
+            {activeTab === 'student' && (
+              <p className="text-center text-sm text-muted-foreground">
+                ليس لديك حساب؟{' '}
+                <Link to="/register" className="text-primary font-medium hover:underline">إنشاء حساب</Link>
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>
