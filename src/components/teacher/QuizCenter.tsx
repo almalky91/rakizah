@@ -39,7 +39,7 @@ const QuizCenter = () => {
       .select('*')
       .eq('teacher_id', user?.id)
       .order('created_at', { ascending: false });
-    setQuizzes(data || []);
+    setQuizzes((data as any) || []);
   };
 
   useEffect(() => { if (user) fetchQuizzes(); }, [user]);
@@ -72,9 +72,9 @@ const QuizCenter = () => {
 
     const { error } = await supabase.from('quizzes').insert({
       title: quizTitle,
-      questions,
-      teacher_id: user?.id,
-    });
+      questions: questions as any,
+      teacher_id: user?.id!,
+    } as any);
     if (error) { toast.error('فشل في حفظ الاختبار'); return; }
     toast.success('تم حفظ الاختبار');
     setQuizTitle('');

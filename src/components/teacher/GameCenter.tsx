@@ -33,7 +33,7 @@ const GameCenter = () => {
       .select('*')
       .eq('teacher_id', user?.id)
       .order('created_at', { ascending: false });
-    setGames(data || []);
+    setGames((data as any) || []);
   };
 
   useEffect(() => { if (user) fetchGames(); }, [user]);
