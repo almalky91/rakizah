@@ -85,7 +85,7 @@ const LandingPage = () => {
             >
               <Star className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </motion.div>
-            <span className="text-sm sm:text-xl font-bold text-primary-foreground">منصتي التعليمية</span>
+            <span className="text-base sm:text-xl font-bold text-primary-foreground">منصتي التعليمية</span>
           </div>
           <div className="flex gap-2 sm:gap-3">
             <Link to="/login">
@@ -114,7 +114,7 @@ const LandingPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-2xl sm:text-4xl md:text-6xl font-extrabold text-primary-foreground leading-tight mb-3 sm:mb-6"
+              className="text-4xl sm:text-5xl md:text-7xl font-black text-primary-foreground leading-tight mb-4 sm:mb-6"
             >
               تعلّم، العب، <span className="text-gradient">وتميّز</span>
             </motion.h1>
@@ -122,7 +122,7 @@ const LandingPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.45 }}
-              className="text-xs sm:text-base md:text-xl text-primary-foreground/70 mb-5 sm:mb-10 max-w-2xl mx-auto px-2 leading-relaxed"
+              className="text-sm sm:text-lg md:text-2xl text-primary-foreground/70 mb-6 sm:mb-10 max-w-2xl mx-auto px-2 leading-relaxed"
             >
               منصة تعليمية تجمع بين الفيديوهات والاختبارات والألعاب التفاعلية لتجربة تعليمية ممتعة وفعّالة
             </motion.p>
@@ -177,8 +177,8 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-center mb-8 sm:mb-16"
           >
-            <h2 className="text-xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">كل ما تحتاجه في مكان واحد</h2>
-            <p className="text-muted-foreground text-xs sm:text-lg">أدوات تعليمية متكاملة لتجربة تعليمية استثنائية</p>
+           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">كل ما تحتاجه في مكان واحد</h2>
+            <p className="text-muted-foreground text-sm sm:text-lg">أدوات تعليمية متكاملة لتجربة تعليمية استثنائية</p>
           </motion.div>
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {features.map((f, i) => (
@@ -199,8 +199,8 @@ const LandingPage = () => {
                 >
                   <f.icon className="w-4 h-4 sm:w-7 sm:h-7 text-primary-foreground" />
                 </motion.div>
-                <h3 className="text-xs sm:text-lg font-bold mb-0.5 sm:mb-2">{f.title}</h3>
-                <p className="text-muted-foreground text-[10px] sm:text-sm leading-relaxed">{f.desc}</p>
+               <h3 className="text-sm sm:text-lg font-bold mb-0.5 sm:mb-2">{f.title}</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -226,10 +226,10 @@ const LandingPage = () => {
                 className="text-center p-4 sm:p-8 rounded-2xl bg-card border border-border"
               >
                 <s.icon className={`w-6 h-6 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-3 ${s.color}`} />
-                <div className="text-xl sm:text-4xl font-bold mb-0.5">
+                <div className="text-2xl sm:text-4xl font-bold mb-0.5">
                   <AnimatedCounter target={s.value} />
                 </div>
-                <p className="text-muted-foreground text-[10px] sm:text-sm">{s.label}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm">{s.label}</p>
               </motion.div>
             ))}
           </div>
@@ -246,8 +246,8 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-center mb-8 sm:mb-14"
           >
-            <h2 className="text-xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">ماذا يقول مستخدمونا</h2>
-            <p className="text-muted-foreground text-xs sm:text-lg">آراء المعلمين والمعلمات الذين يستخدمون المنصة</p>
+           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">ماذا يقول مستخدمونا</h2>
+            <p className="text-muted-foreground text-sm sm:text-lg">آراء المعلمين والمعلمات الذين يستخدمون المنصة</p>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
@@ -292,8 +292,8 @@ const LandingPage = () => {
           variants={scaleIn}
           className="max-w-4xl mx-auto gradient-primary rounded-2xl sm:rounded-3xl p-6 sm:p-12 text-center"
         >
-          <h2 className="text-lg sm:text-3xl font-bold text-primary-foreground mb-2 sm:mb-4">مستعد للبدء؟</h2>
-          <p className="text-primary-foreground/80 text-xs sm:text-base mb-4 sm:mb-8">انضم إلى المنصة وابدأ رحلتك التعليمية اليوم</p>
+         <h2 className="text-2xl sm:text-3xl font-bold text-primary-foreground mb-2 sm:mb-4">مستعد للبدء؟</h2>
+          <p className="text-primary-foreground/80 text-sm sm:text-lg mb-5 sm:mb-8">انضم إلى المنصة وابدأ رحلتك التعليمية اليوم</p>
           <Link to="/register">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <Button variant="gold" size="sm" className="text-sm sm:text-lg sm:px-8 sm:py-3">
