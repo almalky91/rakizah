@@ -101,6 +101,7 @@ const TeacherPublicPage = () => {
       console.error('Error saving quiz result:', error);
     } else {
       toast.success('تم حفظ نتيجتك بنجاح');
+      setLeaderboardKey(k => k + 1);
     }
   };
 
