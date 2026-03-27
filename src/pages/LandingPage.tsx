@@ -1,7 +1,27 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft, Quote } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft, Quote, GraduationCap, ClipboardList } from 'lucide-react';
+import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+function AnimatedCounter({ target, duration = 2 }: { target: number; duration?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true });
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    const controls = animate(0, target, {
+      duration,
+      ease: [0.25, 0.1, 0.25, 1],
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [isInView, target, duration]);
+
+  return <span ref={ref}>{display.toLocaleString('ar-SA')}</span>;
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
