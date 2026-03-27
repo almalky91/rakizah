@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Star, BookOpen, Gamepad2, User, Video } from 'lucide-react';
+import { BookOpen, Gamepad2, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import PublicBanner from '@/components/public/PublicBanner';
 import PublicNameGate from '@/components/public/PublicNameGate';
@@ -138,24 +138,23 @@ const TeacherPublicPage = () => {
     <div className="min-h-screen bg-background">
       <PublicBanner profile={profile} studentName={studentName} totalContent={totalContent} />
 
-      <main className="max-w-5xl mx-auto px-4 py-8 -mt-8 relative z-10">
-        <PublicLeaderboard key={leaderboardKey} teacherId={teacherId!} />
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8 -mt-8 relative z-10">
         <Tabs defaultValue="quizzes" dir="rtl">
-          <TabsList className="grid grid-cols-3 w-full max-w-lg mx-auto mb-8 h-auto bg-card shadow-lg border border-border/50 rounded-2xl p-1">
-            <TabsTrigger value="quizzes" className="flex items-center gap-2 py-3 rounded-xl data-[state=active]:shadow-md">
+          <TabsList className="grid grid-cols-3 w-full max-w-lg mx-auto mb-6 sm:mb-8 h-auto bg-card shadow-lg border border-border/50 rounded-2xl p-1">
+            <TabsTrigger value="quizzes" className="flex items-center gap-1 sm:gap-2 py-2.5 sm:py-3 rounded-xl data-[state=active]:shadow-md text-xs sm:text-sm">
               <BookOpen className="w-4 h-4" />
-              الاختبارات
-              {quizzes.length > 0 && <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{quizzes.length}</span>}
+              <span>الاختبارات</span>
+              {quizzes.length > 0 && <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1 sm:px-1.5 py-0.5 rounded-full">{quizzes.length}</span>}
             </TabsTrigger>
-            <TabsTrigger value="games" className="flex items-center gap-2 py-3 rounded-xl data-[state=active]:shadow-md">
+            <TabsTrigger value="games" className="flex items-center gap-1 sm:gap-2 py-2.5 sm:py-3 rounded-xl data-[state=active]:shadow-md text-xs sm:text-sm">
               <Gamepad2 className="w-4 h-4" />
-              الألعاب
-              {games.length > 0 && <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{games.length}</span>}
+              <span>الألعاب</span>
+              {games.length > 0 && <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1 sm:px-1.5 py-0.5 rounded-full">{games.length}</span>}
             </TabsTrigger>
-            <TabsTrigger value="videos" className="flex items-center gap-2 py-3 rounded-xl data-[state=active]:shadow-md">
+            <TabsTrigger value="videos" className="flex items-center gap-1 sm:gap-2 py-2.5 sm:py-3 rounded-xl data-[state=active]:shadow-md text-xs sm:text-sm">
               <Video className="w-4 h-4" />
-              الفيديوهات
-              {videos.length > 0 && <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{videos.length}</span>}
+              <span>الفيديوهات</span>
+              {videos.length > 0 && <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1 sm:px-1.5 py-0.5 rounded-full">{videos.length}</span>}
             </TabsTrigger>
           </TabsList>
 
@@ -170,6 +169,8 @@ const TeacherPublicPage = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <PublicLeaderboard key={leaderboardKey} teacherId={teacherId!} />
 
       <footer className="text-center py-6 text-muted-foreground text-xs border-t border-border/50">
         <p>منصة تعليمية تفاعلية ✨</p>
