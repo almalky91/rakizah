@@ -77,20 +77,20 @@ const LandingPage = () => {
       </section>
 
       {/* Features */}
-      <section className="py-24 px-6">
+      <section className="py-12 sm:py-24 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">كل ما تحتاجه في مكان واحد</h2>
-            <p className="text-muted-foreground text-lg">أدوات تعليمية متكاملة لتجربة تعليمية استثنائية</p>
+          <div className="text-center mb-8 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">كل ما تحتاجه في مكان واحد</h2>
+            <p className="text-muted-foreground text-sm sm:text-lg">أدوات تعليمية متكاملة لتجربة تعليمية استثنائية</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {features.map((f, i) => (
-              <div key={i} className="group p-6 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
-                <div className="w-14 h-14 rounded-xl gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <f.icon className="w-7 h-7 text-primary-foreground" />
+              <div key={i} className="group p-4 sm:p-6 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl gradient-primary flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
+                  <f.icon className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">{f.title}</h3>
-                <p className="text-muted-foreground">{f.desc}</p>
+                <h3 className="text-sm sm:text-xl font-bold mb-1 sm:mb-2">{f.title}</h3>
+                <p className="text-muted-foreground text-xs sm:text-base">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -98,14 +98,14 @@ const LandingPage = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto gradient-primary rounded-3xl p-12 text-center">
-          <h2 className="text-3xl font-bold text-primary-foreground mb-4">مستعد للبدء؟</h2>
-          <p className="text-primary-foreground/80 mb-8">انضم إلى المنصة وابدأ رحلتك التعليمية اليوم</p>
+      <section className="py-12 sm:py-20 px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto gradient-primary rounded-2xl sm:rounded-3xl p-6 sm:p-12 text-center">
+          <h2 className="text-xl sm:text-3xl font-bold text-primary-foreground mb-3 sm:mb-4">مستعد للبدء؟</h2>
+          <p className="text-primary-foreground/80 text-sm sm:text-base mb-5 sm:mb-8">انضم إلى المنصة وابدأ رحلتك التعليمية اليوم</p>
           <Link to="/register">
-            <Button variant="gold" size="lg" className="text-lg px-8">
+            <Button variant="gold" size="sm" className="text-sm sm:text-lg sm:px-8 sm:py-3">
               سجّل الآن
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </Link>
         </div>
