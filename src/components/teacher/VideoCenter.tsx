@@ -3,9 +3,9 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Video, Eye } from 'lucide-react';
+import { Plus, Trash2, Video, Eye, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
@@ -23,6 +23,7 @@ const VideoCenter = () => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchVideos = async () => {
     const { data } = await supabase
@@ -40,20 +41,34 @@ const VideoCenter = () => {
     return match ? match[1] : null;
   };
 
-  const addVideo = async (e: React.FormEvent) => {
+  const openEdit = (v: VideoItem) => {
+    setEditingId(v.id);
+    setTitle(v.title);
+    setUrl(v.youtube_url);
+    setOpen(true);
+  };
+
+  const resetForm = () => {
+    setTitle(''); setUrl(''); setEditingId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!getYouTubeId(url)) {
       toast.error('يرجى إدخال رابط يوتيوب صحيح');
       return;
     }
-    const { error } = await supabase.from('videos').insert({
-      title,
-      youtube_url: url,
-      teacher_id: user?.id,
-    });
-    if (error) { toast.error('فشل في إضافة الفيديو'); return; }
-    toast.success('تم إضافة الفيديو');
-    setTitle(''); setUrl(''); setOpen(false);
+
+    if (editingId) {
+      const { error } = await supabase.from('videos').update({ title, youtube_url: url }).eq('id', editingId);
+      if (error) { toast.error('فشل في تحديث الفيديو'); return; }
+      toast.success('تم تحديث الفيديو');
+    } else {
+      const { error } = await supabase.from('videos').insert({ title, youtube_url: url, teacher_id: user?.id });
+      if (error) { toast.error('فشل في إضافة الفيديو'); return; }
+      toast.success('تم إضافة الفيديو');
+    }
+    resetForm(); setOpen(false);
     fetchVideos();
   };
 
@@ -70,13 +85,13 @@ const VideoCenter = () => {
           <Video className="w-6 h-6 text-primary" />
           مركز الفيديو
         </h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
             <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إضافة فيديو</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>إضافة فيديو يوتيوب</DialogTitle></DialogHeader>
-            <form onSubmit={addVideo} className="space-y-4">
+            <DialogHeader><DialogTitle>{editingId ? 'تعديل الفيديو' : 'إضافة فيديو يوتيوب'}</DialogTitle></DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>عنوان الفيديو</Label>
                 <Input value={title} onChange={e => setTitle(e.target.value)} required placeholder="مثال: درس الرياضيات - الوحدة الأولى" />
@@ -85,7 +100,7 @@ const VideoCenter = () => {
                 <Label>رابط يوتيوب</Label>
                 <Input value={url} onChange={e => setUrl(e.target.value)} required placeholder="https://youtube.com/watch?v=..." dir="ltr" />
               </div>
-              <Button type="submit" variant="hero" className="w-full">إضافة</Button>
+              <Button type="submit" variant="hero" className="w-full">{editingId ? 'تحديث' : 'إضافة'}</Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -113,9 +128,14 @@ const VideoCenter = () => {
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
                       <Eye className="w-3 h-3" /> {v.views || 0} مشاهدة
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => deleteVideo(v.id)} className="text-destructive hover:text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(v)} className="text-primary hover:text-primary">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteVideo(v.id)} className="text-destructive hover:text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

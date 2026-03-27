@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, BookOpen, X } from 'lucide-react';
+import { Plus, Trash2, BookOpen, X, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +28,7 @@ const QuizCenter = () => {
   const { user } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([
     { question: '', options: ['', '', '', ''], correct: 0 },
@@ -65,20 +66,41 @@ const QuizCenter = () => {
     setQuestions(updated);
   };
 
+  const resetForm = () => {
+    setQuizTitle('');
+    setQuestions([{ question: '', options: ['', '', '', ''], correct: 0 }]);
+    setEditingId(null);
+  };
+
+  const openEdit = (q: Quiz) => {
+    setEditingId(q.id);
+    setQuizTitle(q.title);
+    setQuestions(q.questions?.length ? q.questions : [{ question: '', options: ['', '', '', ''], correct: 0 }]);
+    setOpen(true);
+  };
+
   const saveQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     const valid = questions.every(q => q.question && q.options.every(o => o));
     if (!valid) { toast.error('يرجى ملء جميع الحقول'); return; }
 
-    const { error } = await supabase.from('quizzes').insert({
-      title: quizTitle,
-      questions: questions as any,
-      teacher_id: user?.id!,
-    } as any);
-    if (error) { toast.error('فشل في حفظ الاختبار'); return; }
-    toast.success('تم حفظ الاختبار');
-    setQuizTitle('');
-    setQuestions([{ question: '', options: ['', '', '', ''], correct: 0 }]);
+    if (editingId) {
+      const { error } = await supabase.from('quizzes').update({
+        title: quizTitle,
+        questions: questions as any,
+      }).eq('id', editingId);
+      if (error) { toast.error('فشل في تحديث الاختبار'); return; }
+      toast.success('تم تحديث الاختبار');
+    } else {
+      const { error } = await supabase.from('quizzes').insert({
+        title: quizTitle,
+        questions: questions as any,
+        teacher_id: user?.id!,
+      } as any);
+      if (error) { toast.error('فشل في حفظ الاختبار'); return; }
+      toast.success('تم حفظ الاختبار');
+    }
+    resetForm();
     setOpen(false);
     fetchQuizzes();
   };
@@ -96,12 +118,12 @@ const QuizCenter = () => {
           <BookOpen className="w-6 h-6 text-primary" />
           مركز الاختبارات
         </h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
             <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إنشاء اختبار</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>إنشاء اختبار جديد</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingId ? 'تعديل الاختبار' : 'إنشاء اختبار جديد'}</DialogTitle></DialogHeader>
             <form onSubmit={saveQuiz} className="space-y-6">
               <div className="space-y-2">
                 <Label>عنوان الاختبار</Label>
@@ -138,7 +160,7 @@ const QuizCenter = () => {
               <Button type="button" variant="outline" onClick={addQuestion} className="w-full">
                 <Plus className="w-4 h-4 ml-1" />إضافة سؤال آخر
               </Button>
-              <Button type="submit" variant="hero" className="w-full">حفظ الاختبار</Button>
+              <Button type="submit" variant="hero" className="w-full">{editingId ? 'تحديث الاختبار' : 'حفظ الاختبار'}</Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -161,9 +183,14 @@ const QuizCenter = () => {
                     <h3 className="font-semibold text-lg mb-1">{q.title}</h3>
                     <p className="text-sm text-muted-foreground">{q.questions?.length || 0} سؤال</p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => deleteQuiz(q.id)} className="text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(q)} className="text-primary hover:text-primary">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteQuiz(q.id)} className="text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -3,9 +3,9 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Gamepad2, Plus, Trash2 } from 'lucide-react';
+import { Gamepad2, Plus, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +22,7 @@ const GameCenter = () => {
   const { user } = useAuth();
   const [games, setGames] = useState<Game[]>([]);
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [gameTitle, setGameTitle] = useState('');
   const [gameType, setGameType] = useState<'wheel' | 'memory'>('wheel');
   const [wheelItems, setWheelItems] = useState(['', '', '', '']);
@@ -38,28 +39,53 @@ const GameCenter = () => {
 
   useEffect(() => { if (user) fetchGames(); }, [user]);
 
-  const saveGame = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const config = gameType === 'wheel' ? { items: wheelItems.filter(Boolean) } : { pairs: memoryPairs.filter(p => p.term && p.match) };
-    
-    const { error } = await supabase.from('games').insert({
-      title: gameTitle,
-      game_type: gameType,
-      config,
-      teacher_id: user?.id,
-    });
-    if (error) { toast.error('فشل في حفظ اللعبة'); return; }
-    toast.success('تم حفظ اللعبة');
-    resetForm();
-    setOpen(false);
-    fetchGames();
-  };
-
   const resetForm = () => {
     setGameTitle('');
     setGameType('wheel');
     setWheelItems(['', '', '', '']);
     setMemoryPairs([{ term: '', match: '' }]);
+    setEditingId(null);
+  };
+
+  const openEdit = (g: Game) => {
+    setEditingId(g.id);
+    setGameTitle(g.title);
+    setGameType(g.game_type);
+    if (g.game_type === 'wheel') {
+      setWheelItems(g.config?.items?.length ? g.config.items : ['', '', '', '']);
+    } else {
+      setMemoryPairs(g.config?.pairs?.length ? g.config.pairs : [{ term: '', match: '' }]);
+    }
+    setOpen(true);
+  };
+
+  const saveGame = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const config = gameType === 'wheel'
+      ? { items: wheelItems.filter(Boolean) }
+      : { pairs: memoryPairs.filter(p => p.term && p.match) };
+
+    if (editingId) {
+      const { error } = await supabase.from('games').update({
+        title: gameTitle,
+        game_type: gameType,
+        config,
+      }).eq('id', editingId);
+      if (error) { toast.error('فشل في تحديث اللعبة'); return; }
+      toast.success('تم تحديث اللعبة');
+    } else {
+      const { error } = await supabase.from('games').insert({
+        title: gameTitle,
+        game_type: gameType,
+        config,
+        teacher_id: user?.id,
+      });
+      if (error) { toast.error('فشل في حفظ اللعبة'); return; }
+      toast.success('تم حفظ اللعبة');
+    }
+    resetForm();
+    setOpen(false);
+    fetchGames();
   };
 
   const deleteGame = async (id: string) => {
@@ -75,12 +101,12 @@ const GameCenter = () => {
           <Gamepad2 className="w-6 h-6 text-primary" />
           مركز الألعاب
         </h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
             <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إنشاء لعبة</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>إنشاء لعبة جديدة</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingId ? 'تعديل اللعبة' : 'إنشاء لعبة جديدة'}</DialogTitle></DialogHeader>
             <form onSubmit={saveGame} className="space-y-4">
               <div className="space-y-2">
                 <Label>اسم اللعبة</Label>
@@ -88,7 +114,7 @@ const GameCenter = () => {
               </div>
               <div className="space-y-2">
                 <Label>نوع اللعبة</Label>
-                <Select value={gameType} onValueChange={(v: 'wheel' | 'memory') => setGameType(v)}>
+                <Select value={gameType} onValueChange={(v: 'wheel' | 'memory') => setGameType(v)} disabled={!!editingId}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="wheel">العجلة الدوارة</SelectItem>
@@ -134,7 +160,7 @@ const GameCenter = () => {
                 </div>
               )}
 
-              <Button type="submit" variant="hero" className="w-full">حفظ اللعبة</Button>
+              <Button type="submit" variant="hero" className="w-full">{editingId ? 'تحديث اللعبة' : 'حفظ اللعبة'}</Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -159,9 +185,14 @@ const GameCenter = () => {
                       {g.game_type === 'wheel' ? 'عجلة دوارة' : 'لعبة ذاكرة'}
                     </span>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => deleteGame(g.id)} className="text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(g)} className="text-primary hover:text-primary">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteGame(g.id)} className="text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
