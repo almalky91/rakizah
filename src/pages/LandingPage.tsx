@@ -292,8 +292,8 @@ const LandingPage = () => {
           variants={scaleIn}
           className="max-w-4xl mx-auto gradient-primary rounded-2xl sm:rounded-3xl p-6 sm:p-12 text-center"
         >
-          <h2 className="text-xl sm:text-3xl font-bold text-primary-foreground mb-3 sm:mb-4">مستعد للبدء؟</h2>
-          <p className="text-primary-foreground/80 text-sm sm:text-base mb-5 sm:mb-8">انضم إلى المنصة وابدأ رحلتك التعليمية اليوم</p>
+          <h2 className="text-lg sm:text-3xl font-bold text-primary-foreground mb-2 sm:mb-4">مستعد للبدء؟</h2>
+          <p className="text-primary-foreground/80 text-xs sm:text-base mb-4 sm:mb-8">انضم إلى المنصة وابدأ رحلتك التعليمية اليوم</p>
           <Link to="/register">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <Button variant="gold" size="sm" className="text-sm sm:text-lg sm:px-8 sm:py-3">
