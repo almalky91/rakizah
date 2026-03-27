@@ -8,6 +8,7 @@ import QuizCenter from '@/components/teacher/QuizCenter';
 import GameCenter from '@/components/teacher/GameCenter';
 import PerformanceBoard from '@/components/teacher/PerformanceBoard';
 import PageSettings from '@/components/teacher/PageSettings';
+import SubscriptionGate from '@/components/teacher/SubscriptionGate';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
