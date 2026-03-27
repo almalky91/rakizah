@@ -34,6 +34,7 @@ const TeacherDashboard = () => {
   };
 
   return (
+    <SubscriptionGate>
     <div className="min-h-screen bg-background">
       <header className="gradient-primary border-b border-border/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -92,6 +93,7 @@ const TeacherDashboard = () => {
         </Tabs>
       </main>
     </div>
+    </SubscriptionGate>
   );
 };
 
