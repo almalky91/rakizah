@@ -17,35 +17,16 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify caller is admin
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
-    
-    if (!caller) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { data: roleData } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .eq("role", "admin")
-      .single();
-
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: "Not admin" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { email, password, fullName } = await req.json();
 
-    // Create user
+    if (!email || !password || !fullName) {
+      return new Response(JSON.stringify({ error: "Missing fields" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Create user with email confirmation required
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -55,19 +36,16 @@ serve(async (req) => {
 
     if (createError) throw createError;
 
-    // Set role to teacher (override the default student role from trigger)
+    // Update role from default 'student' to 'teacher'
     await supabaseAdmin
       .from("user_roles")
       .update({ role: "teacher" })
       .eq("user_id", newUser.user.id);
 
-    // Admin-created teachers get activated subscription
-    await supabaseAdmin
-      .from("profiles")
-      .update({ subscription_active: true })
-      .eq("id", newUser.user.id);
+    // Trial starts now, subscription_active stays false
+    // trial_ends_at is already set by the default column value (now + 1 day)
 
-    return new Response(JSON.stringify({ user: newUser.user }), {
+    return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {

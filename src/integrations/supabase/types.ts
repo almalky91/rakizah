@@ -79,6 +79,8 @@ export type Database = {
           page_title: string | null
           public_slug: string | null
           school_name: string | null
+          subscription_active: boolean
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -91,6 +93,8 @@ export type Database = {
           page_title?: string | null
           public_slug?: string | null
           school_name?: string | null
+          subscription_active?: boolean
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -103,6 +107,8 @@ export type Database = {
           page_title?: string | null
           public_slug?: string | null
           school_name?: string | null
+          subscription_active?: boolean
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: []

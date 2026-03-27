@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Plus, Trash2, LogOut, Shield, BookOpen, Video, Gamepad2, ExternalLink, Copy, Check, BarChart3, Eye } from 'lucide-react';
+import { Users, Plus, Trash2, LogOut, Shield, BookOpen, Video, Gamepad2, ExternalLink, Copy, Check, BarChart3, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,8 @@ interface Teacher {
   created_at: string;
   public_slug: string | null;
   school_name: string | null;
+  trial_ends_at: string | null;
+  subscription_active: boolean;
 }
 
 interface TeacherStats {
@@ -45,7 +47,7 @@ const AdminDashboard = () => {
 
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, full_name, created_at, public_slug, school_name')
+      .select('id, email, full_name, created_at, public_slug, school_name, trial_ends_at, subscription_active')
       .in('id', teacherIds);
     setTeachers((data as any) || []);
 
@@ -106,6 +108,26 @@ const AdminDashboard = () => {
     setCopiedId(id);
     toast.success('تم نسخ الرابط');
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const toggleSubscription = async (teacherId: string, active: boolean) => {
+    try {
+      const { error } = await supabase.functions.invoke('toggle-teacher-subscription', {
+        body: { teacherId, active },
+      });
+      if (error) throw error;
+      toast.success(active ? 'تم تفعيل الاشتراك' : 'تم إيقاف الاشتراك');
+      fetchTeachers();
+    } catch {
+      toast.error('فشل في تغيير حالة الاشتراك');
+    }
+  };
+
+  const getSubscriptionStatus = (t: Teacher) => {
+    if (t.subscription_active) return { label: 'مفعّل', color: 'text-emerald-500' };
+    const trialEnd = t.trial_ends_at ? new Date(t.trial_ends_at) : null;
+    if (trialEnd && new Date() < trialEnd) return { label: 'تجريبي', color: 'text-amber-500' };
+    return { label: 'متوقف', color: 'text-destructive' };
   };
 
   const totalStats = {
@@ -255,19 +277,35 @@ const AdminDashboard = () => {
                           <span className="flex items-center gap-1"><Gamepad2 className="w-3 h-3" />{s.games}</span>
                           <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" />{s.publicResults} نتيجة</span>
                         </div>
-                        {t.public_slug && (
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="text-xs flex-1" onClick={() => copyLink(t.public_slug!, t.id)}>
-                              {copiedId === t.id ? <Check className="w-3 h-3 ml-1" /> : <Copy className="w-3 h-3 ml-1" />}
-                              {copiedId === t.id ? 'تم النسخ' : 'نسخ الرابط'}
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs" asChild>
-                              <a href={`/p/${t.public_slug}`} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
+                            <span className={`text-xs font-medium ${getSubscriptionStatus(t).color}`}>
+                              {getSubscriptionStatus(t).label}
+                            </span>
+                            <Button
+                              variant={t.subscription_active ? "outline" : "default"}
+                              size="sm"
+                              className="text-xs h-7"
+                              onClick={() => toggleSubscription(t.id, !t.subscription_active)}
+                            >
+                              {t.subscription_active ? 'إيقاف' : 'تفعيل'}
                             </Button>
                           </div>
-                        )}
+                          <div className="flex items-center gap-1">
+                            {t.public_slug && (
+                              <>
+                                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => copyLink(t.public_slug!, t.id)}>
+                                  {copiedId === t.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                </Button>
+                                <Button variant="outline" size="sm" className="text-xs h-7" asChild>
+                                  <a href={`/p/${t.public_slug}`} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
@@ -280,6 +318,7 @@ const AdminDashboard = () => {
                       <TableRow>
                         <TableHead className="text-right">المعلم</TableHead>
                         <TableHead className="text-right">المدرسة</TableHead>
+                        <TableHead className="text-center">الحالة</TableHead>
                         <TableHead className="text-center">اختبارات</TableHead>
                         <TableHead className="text-center">فيديو</TableHead>
                         <TableHead className="text-center">ألعاب</TableHead>
@@ -291,6 +330,7 @@ const AdminDashboard = () => {
                     <TableBody>
                       {teachers.map(t => {
                         const s = stats[t.id] || { quizzes: 0, videos: 0, games: 0, publicResults: 0 };
+                        const subStatus = getSubscriptionStatus(t);
                         return (
                           <TableRow key={t.id}>
                             <TableCell>
@@ -305,6 +345,19 @@ const AdminDashboard = () => {
                               </div>
                             </TableCell>
                             <TableCell className="text-sm">{t.school_name || '—'}</TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className={`text-xs font-medium ${subStatus.color}`}>{subStatus.label}</span>
+                                <Button
+                                  variant={t.subscription_active ? "outline" : "default"}
+                                  size="sm"
+                                  className="text-xs h-6 px-2"
+                                  onClick={() => toggleSubscription(t.id, !t.subscription_active)}
+                                >
+                                  {t.subscription_active ? 'إيقاف' : 'تفعيل'}
+                                </Button>
+                              </div>
+                            </TableCell>
                             <TableCell className="text-center font-medium">{s.quizzes}</TableCell>
                             <TableCell className="text-center font-medium">{s.videos}</TableCell>
                             <TableCell className="text-center font-medium">{s.games}</TableCell>

@@ -8,6 +8,7 @@ import QuizCenter from '@/components/teacher/QuizCenter';
 import GameCenter from '@/components/teacher/GameCenter';
 import PerformanceBoard from '@/components/teacher/PerformanceBoard';
 import PageSettings from '@/components/teacher/PageSettings';
+import SubscriptionGate from '@/components/teacher/SubscriptionGate';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -33,6 +34,7 @@ const TeacherDashboard = () => {
   };
 
   return (
+    <SubscriptionGate>
     <div className="min-h-screen bg-background">
       <header className="gradient-primary border-b border-border/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -91,6 +93,7 @@ const TeacherDashboard = () => {
         </Tabs>
       </main>
     </div>
+    </SubscriptionGate>
   );
 };
 
