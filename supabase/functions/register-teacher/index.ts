@@ -34,7 +34,15 @@ serve(async (req) => {
       user_metadata: { full_name: fullName },
     });
 
-    if (createError) throw createError;
+    if (createError) {
+      const msg = createError.message?.includes('already been registered')
+        ? 'هذا البريد الإلكتروني مسجل مسبقاً'
+        : createError.message;
+      return new Response(JSON.stringify({ error: msg }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Update role from default 'student' to 'teacher'
     await supabaseAdmin
