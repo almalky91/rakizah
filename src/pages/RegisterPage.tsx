@@ -4,16 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import { Star } from 'lucide-react';
+import { Star, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,8 +23,12 @@ const RegisterPage = () => {
     }
     setLoading(true);
     try {
-      await signUp(email, password, fullName);
-      toast.success('تم إنشاء الحساب بنجاح! يرجى تأكيد بريدك الإلكتروني');
+      const { data, error } = await supabase.functions.invoke('register-teacher', {
+        body: { email, password, fullName },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن مع فترة تجريبية مجانية ليوم واحد');
       navigate('/login');
     } catch (err: any) {
       toast.error(err.message || 'فشل إنشاء الحساب');
@@ -44,7 +47,11 @@ const RegisterPage = () => {
             </div>
             <span className="text-xl font-bold">منصتي التعليمية</span>
           </Link>
-          <CardTitle className="text-2xl">إنشاء حساب جديد</CardTitle>
+          <CardTitle className="text-2xl">تسجيل حساب معلم جديد</CardTitle>
+          <div className="flex items-center justify-center gap-2 mt-2 text-sm text-muted-foreground">
+            <Clock className="w-4 h-4" />
+            <span>فترة تجريبية مجانية ليوم واحد</span>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
