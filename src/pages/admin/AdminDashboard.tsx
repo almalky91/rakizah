@@ -277,19 +277,35 @@ const AdminDashboard = () => {
                           <span className="flex items-center gap-1"><Gamepad2 className="w-3 h-3" />{s.games}</span>
                           <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" />{s.publicResults} نتيجة</span>
                         </div>
-                        {t.public_slug && (
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="text-xs flex-1" onClick={() => copyLink(t.public_slug!, t.id)}>
-                              {copiedId === t.id ? <Check className="w-3 h-3 ml-1" /> : <Copy className="w-3 h-3 ml-1" />}
-                              {copiedId === t.id ? 'تم النسخ' : 'نسخ الرابط'}
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-xs" asChild>
-                              <a href={`/p/${t.public_slug}`} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
+                            <span className={`text-xs font-medium ${getSubscriptionStatus(t).color}`}>
+                              {getSubscriptionStatus(t).label}
+                            </span>
+                            <Button
+                              variant={t.subscription_active ? "outline" : "default"}
+                              size="sm"
+                              className="text-xs h-7"
+                              onClick={() => toggleSubscription(t.id, !t.subscription_active)}
+                            >
+                              {t.subscription_active ? 'إيقاف' : 'تفعيل'}
                             </Button>
                           </div>
-                        )}
+                          <div className="flex items-center gap-1">
+                            {t.public_slug && (
+                              <>
+                                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => copyLink(t.public_slug!, t.id)}>
+                                  {copiedId === t.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                </Button>
+                                <Button variant="outline" size="sm" className="text-xs h-7" asChild>
+                                  <a href={`/p/${t.public_slug}`} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
