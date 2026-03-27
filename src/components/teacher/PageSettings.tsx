@@ -1,0 +1,236 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { Save, Palette, Eye, Check } from 'lucide-react';
+
+const TEMPLATES = [
+  {
+    id: 'classic',
+    name: 'كلاسيكي',
+    description: 'تصميم أنيق بألوان أزرق داكن',
+    gradient: 'linear-gradient(135deg, hsl(220 25% 10%), hsl(215 80% 25%), hsl(220 25% 14%))',
+    accent: 'hsl(215 80% 55%)',
+    cardBg: 'hsl(220 25% 14%)',
+    textColor: 'hsl(0 0% 100%)',
+  },
+  {
+    id: 'emerald',
+    name: 'زمردي',
+    description: 'أخضر هادئ يعكس الطبيعة',
+    gradient: 'linear-gradient(135deg, hsl(160 30% 8%), hsl(160 60% 25%), hsl(155 40% 12%))',
+    accent: 'hsl(160 60% 45%)',
+    cardBg: 'hsl(160 30% 12%)',
+    textColor: 'hsl(0 0% 100%)',
+  },
+  {
+    id: 'sunset',
+    name: 'غروب',
+    description: 'ألوان دافئة بين البرتقالي والأحمر',
+    gradient: 'linear-gradient(135deg, hsl(15 30% 10%), hsl(25 80% 35%), hsl(350 50% 25%))',
+    accent: 'hsl(25 90% 55%)',
+    cardBg: 'hsl(15 30% 14%)',
+    textColor: 'hsl(0 0% 100%)',
+  },
+  {
+    id: 'royal',
+    name: 'ملكي',
+    description: 'بنفسجي فاخر وأنيق',
+    gradient: 'linear-gradient(135deg, hsl(270 30% 10%), hsl(270 60% 30%), hsl(280 40% 15%))',
+    accent: 'hsl(270 60% 55%)',
+    cardBg: 'hsl(270 30% 14%)',
+    textColor: 'hsl(0 0% 100%)',
+  },
+  {
+    id: 'ocean',
+    name: 'محيطي',
+    description: 'أزرق فيروزي منعش',
+    gradient: 'linear-gradient(135deg, hsl(195 30% 8%), hsl(190 70% 30%), hsl(200 50% 15%))',
+    accent: 'hsl(190 70% 50%)',
+    cardBg: 'hsl(195 30% 12%)',
+    textColor: 'hsl(0 0% 100%)',
+  },
+  {
+    id: 'rose',
+    name: 'وردي',
+    description: 'وردي ناعم وعصري',
+    gradient: 'linear-gradient(135deg, hsl(340 25% 10%), hsl(340 60% 30%), hsl(350 40% 15%))',
+    accent: 'hsl(340 60% 55%)',
+    cardBg: 'hsl(340 25% 14%)',
+    textColor: 'hsl(0 0% 100%)',
+  },
+];
+
+const PageSettings = () => {
+  const { user } = useAuth();
+  const [pageTitle, setPageTitle] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [bio, setBio] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState('classic');
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('page_title, school_name, bio, page_template')
+        .eq('id', user.id)
+        .single();
+      if (data) {
+        setPageTitle(data.page_title || '');
+        setSchoolName((data as any).school_name || '');
+        setBio((data as any).bio || '');
+        setSelectedTemplate((data as any).page_template || 'classic');
+      }
+      setLoading(false);
+    };
+    fetchProfile();
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        page_title: pageTitle || null,
+        school_name: schoolName || null,
+        bio: bio || null,
+        page_template: selectedTemplate,
+      } as any)
+      .eq('id', user.id);
+    
+    if (error) {
+      toast.error('حدث خطأ أثناء الحفظ');
+    } else {
+      toast.success('تم حفظ الإعدادات بنجاح');
+    }
+    setSaving(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* معلومات الصفحة */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Eye className="w-5 h-5 text-primary" />
+            معلومات الصفحة العامة
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="pageTitle">عنوان الصفحة</Label>
+            <Input
+              id="pageTitle"
+              placeholder="مثال: منصة الأستاذ أحمد التعليمية"
+              value={pageTitle}
+              onChange={(e) => setPageTitle(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="schoolName">اسم المدرسة</Label>
+            <Input
+              id="schoolName"
+              placeholder="مثال: مدرسة النور الأهلية"
+              value={schoolName}
+              onChange={(e) => setSchoolName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bio">نبذة تعريفية</Label>
+            <Textarea
+              id="bio"
+              placeholder="اكتب نبذة قصيرة عن صفحتك التعليمية..."
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* قوالب المظهر */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="w-5 h-5 text-primary" />
+            قالب مظهر الصفحة
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedTemplate(t.id)}
+                className={`relative rounded-2xl overflow-hidden border-2 transition-all duration-200 text-right ${
+                  selectedTemplate === t.id
+                    ? 'border-primary ring-2 ring-primary/30 scale-[1.02]'
+                    : 'border-border hover:border-primary/40'
+                }`}
+              >
+                {/* Preview */}
+                <div
+                  className="h-28 p-4 flex flex-col justify-end"
+                  style={{ background: t.gradient }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
+                      style={{ background: t.accent, color: t.textColor }}
+                    >
+                      م
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold" style={{ color: t.textColor }}>
+                        {t.name}
+                      </div>
+                      <div className="text-[10px] opacity-60" style={{ color: t.textColor }}>
+                        عنوان تجريبي
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Info */}
+                <div className="p-3 bg-card">
+                  <p className="text-sm font-semibold">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.description}</p>
+                </div>
+                {/* Selected check */}
+                {selectedTemplate === t.id && (
+                  <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto gap-2">
+        <Save className="w-4 h-4" />
+        {saving ? 'جارٍ الحفظ...' : 'حفظ الإعدادات'}
+      </Button>
+    </div>
+  );
+};
+
+export { TEMPLATES };
+export default PageSettings;

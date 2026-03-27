@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Video, BookOpen, Gamepad2, BarChart3, LogOut, Star, Link2, Copy, Check } from 'lucide-react';
+import { Video, BookOpen, Gamepad2, BarChart3, LogOut, Star, Link2, Copy, Check, Settings } from 'lucide-react';
 import VideoCenter from '@/components/teacher/VideoCenter';
 import QuizCenter from '@/components/teacher/QuizCenter';
 import GameCenter from '@/components/teacher/GameCenter';
 import PerformanceBoard from '@/components/teacher/PerformanceBoard';
+import PageSettings from '@/components/teacher/PageSettings';
 import { toast } from 'sonner';
 
 const TeacherDashboard = () => {
@@ -50,7 +51,7 @@ const TeacherDashboard = () => {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         <Tabs defaultValue="videos" dir="rtl">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl mb-8 h-auto">
+          <TabsList className="grid grid-cols-5 w-full max-w-3xl mb-8 h-auto">
             <TabsTrigger value="videos" className="flex items-center gap-2 py-3">
               <Video className="w-4 h-4" />
               <span className="hidden sm:inline">الفيديو</span>
@@ -67,12 +68,17 @@ const TeacherDashboard = () => {
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">الأداء</span>
             </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2 py-3">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">الإعدادات</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="videos"><VideoCenter /></TabsContent>
           <TabsContent value="quizzes"><QuizCenter /></TabsContent>
           <TabsContent value="games"><GameCenter /></TabsContent>
           <TabsContent value="performance"><PerformanceBoard /></TabsContent>
+          <TabsContent value="settings"><PageSettings /></TabsContent>
         </Tabs>
       </main>
     </div>

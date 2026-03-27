@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS page_template text NOT NULL DEFAULT 'classic';
