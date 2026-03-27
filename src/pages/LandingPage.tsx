@@ -1,7 +1,27 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft, Quote } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft, Quote, GraduationCap, ClipboardList } from 'lucide-react';
+import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+function AnimatedCounter({ target, duration = 2 }: { target: number; duration?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true });
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    const controls = animate(0, target, {
+      duration,
+      ease: [0.25, 0.1, 0.25, 1],
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [isInView, target, duration]);
+
+  return <span ref={ref}>{display.toLocaleString('ar-SA')}</span>;
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -22,6 +42,24 @@ const scaleIn = {
 };
 
 const LandingPage = () => {
+  const [stats, setStats] = useState({ teachers: 0, quizzes: 0, students: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const [teachersRes, quizzesRes, studentsRes] = await Promise.all([
+        supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
+        supabase.from('quizzes').select('id', { count: 'exact', head: true }),
+        supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+      ]);
+      setStats({
+        teachers: teachersRes.count ?? 0,
+        quizzes: quizzesRes.count ?? 0,
+        students: studentsRes.count ?? 0,
+      });
+    };
+    fetchStats();
+  }, []);
+
   const features = [
     { icon: Video, title: 'مركز الفيديو', desc: 'مقاطع فيديو تعليمية من يوتيوب منظمة بعناية' },
     { icon: BookOpen, title: 'مركز الاختبارات', desc: 'اختبارات تفاعلية متعددة الخيارات' },
@@ -163,6 +201,35 @@ const LandingPage = () => {
                 </motion.div>
                 <h3 className="text-sm sm:text-xl font-bold mb-1 sm:mb-2">{f.title}</h3>
                 <p className="text-muted-foreground text-xs sm:text-base">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="py-12 sm:py-20 px-4 sm:px-6 bg-muted/30">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-3 gap-3 sm:gap-8">
+            {[
+              { icon: GraduationCap, label: 'معلم', value: stats.teachers, color: 'text-primary' },
+              { icon: ClipboardList, label: 'اختبار', value: stats.quizzes, color: 'text-accent' },
+              { icon: Users, label: 'طالب', value: stats.students, color: 'text-primary' },
+            ].map((s, i) => (
+              <motion.div
+                key={i}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+                variants={fadeUp}
+                className="text-center p-4 sm:p-8 rounded-2xl bg-card border border-border"
+              >
+                <s.icon className={`w-7 h-7 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 ${s.color}`} />
+                <div className="text-2xl sm:text-4xl font-black mb-1">
+                  <AnimatedCounter target={s.value} />
+                </div>
+                <p className="text-muted-foreground text-xs sm:text-sm">{s.label}</p>
               </motion.div>
             ))}
           </div>
