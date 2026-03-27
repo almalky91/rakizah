@@ -44,11 +44,12 @@ interface TeacherProfile {
   school_name: string | null;
   page_title: string | null;
   bio: string | null;
+  page_template: string;
 }
 
 const TeacherPublicPage = () => {
   const { teacherId } = useParams<{ teacherId: string }>();
-  const [profile, setProfile] = useState<TeacherProfile>({ full_name: null, school_name: null, page_title: null, bio: null });
+  const [profile, setProfile] = useState<TeacherProfile>({ full_name: null, school_name: null, page_title: null, bio: null, page_template: 'classic' });
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [games, setGames] = useState<Game[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
@@ -64,7 +65,7 @@ const TeacherPublicPage = () => {
     const fetchData = async () => {
       if (!teacherId) return;
       const [profileRes, quizzesRes, gamesRes, videosRes] = await Promise.all([
-        supabase.from('profiles').select('full_name, school_name, page_title, bio').eq('id', teacherId).single(),
+        supabase.from('profiles').select('full_name, school_name, page_title, bio, page_template').eq('id', teacherId).single(),
         supabase.from('quizzes').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
         supabase.from('games').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
         supabase.from('videos').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
@@ -74,6 +75,7 @@ const TeacherPublicPage = () => {
         school_name: (profileRes.data as any)?.school_name || null,
         page_title: (profileRes.data as any)?.page_title || null,
         bio: (profileRes.data as any)?.bio || null,
+        page_template: (profileRes.data as any)?.page_template || 'classic',
       });
       setQuizzes((quizzesRes.data as any) || []);
       setGames((gamesRes.data as any) || []);
