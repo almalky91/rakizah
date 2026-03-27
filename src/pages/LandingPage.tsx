@@ -42,6 +42,24 @@ const scaleIn = {
 };
 
 const LandingPage = () => {
+  const [stats, setStats] = useState({ teachers: 0, quizzes: 0, students: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const [teachersRes, quizzesRes, studentsRes] = await Promise.all([
+        supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
+        supabase.from('quizzes').select('id', { count: 'exact', head: true }),
+        supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+      ]);
+      setStats({
+        teachers: teachersRes.count ?? 0,
+        quizzes: quizzesRes.count ?? 0,
+        students: studentsRes.count ?? 0,
+      });
+    };
+    fetchStats();
+  }, []);
+
   const features = [
     { icon: Video, title: 'مركز الفيديو', desc: 'مقاطع فيديو تعليمية من يوتيوب منظمة بعناية' },
     { icon: BookOpen, title: 'مركز الاختبارات', desc: 'اختبارات تفاعلية متعددة الخيارات' },
