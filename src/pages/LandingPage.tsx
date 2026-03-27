@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft } from 'lucide-react';
+import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft, Quote } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeUp = {
