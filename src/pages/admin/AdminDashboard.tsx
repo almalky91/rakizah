@@ -318,6 +318,7 @@ const AdminDashboard = () => {
                       <TableRow>
                         <TableHead className="text-right">المعلم</TableHead>
                         <TableHead className="text-right">المدرسة</TableHead>
+                        <TableHead className="text-center">الحالة</TableHead>
                         <TableHead className="text-center">اختبارات</TableHead>
                         <TableHead className="text-center">فيديو</TableHead>
                         <TableHead className="text-center">ألعاب</TableHead>
@@ -329,6 +330,7 @@ const AdminDashboard = () => {
                     <TableBody>
                       {teachers.map(t => {
                         const s = stats[t.id] || { quizzes: 0, videos: 0, games: 0, publicResults: 0 };
+                        const subStatus = getSubscriptionStatus(t);
                         return (
                           <TableRow key={t.id}>
                             <TableCell>
@@ -343,6 +345,19 @@ const AdminDashboard = () => {
                               </div>
                             </TableCell>
                             <TableCell className="text-sm">{t.school_name || '—'}</TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className={`text-xs font-medium ${subStatus.color}`}>{subStatus.label}</span>
+                                <Button
+                                  variant={t.subscription_active ? "outline" : "default"}
+                                  size="sm"
+                                  className="text-xs h-6 px-2"
+                                  onClick={() => toggleSubscription(t.id, !t.subscription_active)}
+                                >
+                                  {t.subscription_active ? 'إيقاف' : 'تفعيل'}
+                                </Button>
+                              </div>
+                            </TableCell>
                             <TableCell className="text-center font-medium">{s.quizzes}</TableCell>
                             <TableCell className="text-center font-medium">{s.videos}</TableCell>
                             <TableCell className="text-center font-medium">{s.games}</TableCell>
