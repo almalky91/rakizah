@@ -77,6 +77,7 @@ export type Database = {
           id: string
           page_template: string
           page_title: string | null
+          public_slug: string | null
           school_name: string | null
           updated_at: string
         }
@@ -88,6 +89,7 @@ export type Database = {
           id: string
           page_template?: string
           page_title?: string | null
+          public_slug?: string | null
           school_name?: string | null
           updated_at?: string
         }
@@ -99,6 +101,7 @@ export type Database = {
           id?: string
           page_template?: string
           page_title?: string | null
+          public_slug?: string | null
           school_name?: string | null
           updated_at?: string
         }
@@ -321,6 +324,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_public_slug: { Args: { p_email: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

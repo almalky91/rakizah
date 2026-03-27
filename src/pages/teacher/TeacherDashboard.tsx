@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,12 +9,21 @@ import GameCenter from '@/components/teacher/GameCenter';
 import PerformanceBoard from '@/components/teacher/PerformanceBoard';
 import PageSettings from '@/components/teacher/PageSettings';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 const TeacherDashboard = () => {
   const { signOut, user } = useAuth();
   const [copied, setCopied] = useState(false);
+  const [publicSlug, setPublicSlug] = useState<string | null>(null);
 
-  const publicLink = `${window.location.origin}/teacher/${user?.id}`;
+  useEffect(() => {
+    if (user?.id) {
+      supabase.from('profiles').select('public_slug').eq('id', user.id).single()
+        .then(({ data }) => setPublicSlug((data as any)?.public_slug || null));
+    }
+  }, [user]);
+
+  const publicLink = publicSlug ? `${window.location.origin}/p/${publicSlug}` : '';
 
   const copyLink = () => {
     navigator.clipboard.writeText(publicLink);

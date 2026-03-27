@@ -49,7 +49,8 @@ interface TeacherProfile {
 }
 
 const TeacherPublicPage = () => {
-  const { teacherId } = useParams<{ teacherId: string }>();
+  const { slug } = useParams<{ slug: string }>();
+  const [teacherId, setTeacherId] = useState<string | null>(null);
   const [profile, setProfile] = useState<TeacherProfile>({ full_name: null, school_name: null, page_title: null, bio: null, page_template: 'classic' });
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [games, setGames] = useState<Game[]>([]);
@@ -65,15 +66,19 @@ const TeacherPublicPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!teacherId) return;
-      const [profileRes, quizzesRes, gamesRes, videosRes] = await Promise.all([
-        supabase.from('profiles').select('full_name, school_name, page_title, bio, page_template').eq('id', teacherId).single(),
-        supabase.from('quizzes').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
-        supabase.from('games').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
-        supabase.from('videos').select('*').eq('teacher_id', teacherId).order('created_at', { ascending: false }),
+      if (!slug) return;
+      // Resolve slug to teacher ID
+      const profileRes = await supabase.from('profiles').select('id, full_name, school_name, page_title, bio, page_template').eq('public_slug', slug as any).single();
+      if (!profileRes.data) { setLoading(false); return; }
+      const tid = (profileRes.data as any).id;
+      setTeacherId(tid);
+      const [quizzesRes, gamesRes, videosRes] = await Promise.all([
+        supabase.from('quizzes').select('*').eq('teacher_id', tid).order('created_at', { ascending: false }),
+        supabase.from('games').select('*').eq('teacher_id', tid).order('created_at', { ascending: false }),
+        supabase.from('videos').select('*').eq('teacher_id', tid).order('created_at', { ascending: false }),
       ]);
       setProfile({
-        full_name: profileRes.data?.full_name || 'معلم',
+        full_name: (profileRes.data as any)?.full_name || 'معلم',
         school_name: (profileRes.data as any)?.school_name || null,
         page_title: (profileRes.data as any)?.page_title || null,
         bio: (profileRes.data as any)?.bio || null,
@@ -85,7 +90,7 @@ const TeacherPublicPage = () => {
       setLoading(false);
     };
     fetchData();
-  }, [teacherId]);
+  }, [slug]);
 
   const saveQuizResult = async (quizId: string, score: number, totalQuestions: number, answers: Record<number, number>) => {
     if (!teacherId) return;
