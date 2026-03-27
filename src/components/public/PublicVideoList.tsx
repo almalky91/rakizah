@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Video, Play, Eye } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface VideoItem {
   id: string;
@@ -11,10 +12,28 @@ interface VideoItem {
 
 interface Props {
   videos: VideoItem[];
+  studentName?: string;
+  teacherId?: string;
+  onVideoWatched?: () => void;
 }
 
-const PublicVideoList = ({ videos }: Props) => {
+const PublicVideoList = ({ videos, studentName, teacherId, onVideoWatched }: Props) => {
   const [playing, setPlaying] = useState<string | null>(null);
+  const [watched, setWatched] = useState<Set<string>>(new Set());
+
+  const handlePlay = async (videoId: string) => {
+    const wasPlaying = playing === videoId;
+    setPlaying(wasPlaying ? null : videoId);
+    if (!wasPlaying && studentName && teacherId && !watched.has(videoId)) {
+      setWatched(prev => new Set(prev).add(videoId));
+      await supabase.from('public_video_views' as any).insert({
+        video_id: videoId,
+        teacher_id: teacherId,
+        student_name: studentName,
+      });
+      onVideoWatched?.();
+    }
+  };
 
   if (videos.length === 0) {
     return (
@@ -31,7 +50,7 @@ const PublicVideoList = ({ videos }: Props) => {
         const ytMatch = v.youtube_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
         const ytId = ytMatch ? ytMatch[1] : null;
         return (
-          <Card key={v.id} className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 border-border/50" onClick={() => setPlaying(playing === v.id ? null : v.id)}>
+          <Card key={v.id} className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 border-border/50" onClick={() => handlePlay(v.id)}>
             <div className="aspect-video bg-muted relative">
               {playing === v.id && ytId ? (
                 <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1`} className="w-full h-full" allow="autoplay; encrypted-media" allowFullScreen />
