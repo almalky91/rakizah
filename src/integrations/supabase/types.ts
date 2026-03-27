@@ -145,6 +145,38 @@ export type Database = {
           },
         ]
       }
+      public_video_views: {
+        Row: {
+          id: string
+          student_name: string
+          teacher_id: string
+          video_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          student_name: string
+          teacher_id: string
+          video_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          student_name?: string
+          teacher_id?: string
+          video_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_video_views_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_results: {
         Row: {
           answers: Json | null

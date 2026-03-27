@@ -12,6 +12,7 @@ import PublicMemoryView from '@/components/public/PublicMemoryView';
 import PublicQuizList from '@/components/public/PublicQuizList';
 import PublicGameList from '@/components/public/PublicGameList';
 import PublicVideoList from '@/components/public/PublicVideoList';
+import PublicLeaderboard from '@/components/public/PublicLeaderboard';
 
 interface Question {
   question: string;
@@ -56,6 +57,7 @@ const TeacherPublicPage = () => {
   const [studentName, setStudentName] = useState('');
   const [nameConfirmed, setNameConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [leaderboardKey, setLeaderboardKey] = useState(0);
 
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [activeWheel, setActiveWheel] = useState<Game | null>(null);
@@ -99,6 +101,7 @@ const TeacherPublicPage = () => {
       console.error('Error saving quiz result:', error);
     } else {
       toast.success('تم حفظ نتيجتك بنجاح');
+      setLeaderboardKey(k => k + 1);
     }
   };
 
@@ -136,6 +139,7 @@ const TeacherPublicPage = () => {
       <PublicBanner profile={profile} studentName={studentName} totalContent={totalContent} />
 
       <main className="max-w-5xl mx-auto px-4 py-8 -mt-8 relative z-10">
+        <PublicLeaderboard key={leaderboardKey} teacherId={teacherId!} />
         <Tabs defaultValue="quizzes" dir="rtl">
           <TabsList className="grid grid-cols-3 w-full max-w-lg mx-auto mb-8 h-auto bg-card shadow-lg border border-border/50 rounded-2xl p-1">
             <TabsTrigger value="quizzes" className="flex items-center gap-2 py-3 rounded-xl data-[state=active]:shadow-md">
@@ -162,7 +166,7 @@ const TeacherPublicPage = () => {
             <PublicGameList games={games} onStartWheel={setActiveWheel} onStartMemory={setActiveMemory} />
           </TabsContent>
           <TabsContent value="videos">
-            <PublicVideoList videos={videos} />
+            <PublicVideoList videos={videos} studentName={studentName} teacherId={teacherId} onVideoWatched={() => setLeaderboardKey(k => k + 1)} />
           </TabsContent>
         </Tabs>
       </main>
