@@ -110,6 +110,26 @@ const AdminDashboard = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const toggleSubscription = async (teacherId: string, active: boolean) => {
+    try {
+      const { error } = await supabase.functions.invoke('toggle-teacher-subscription', {
+        body: { teacherId, active },
+      });
+      if (error) throw error;
+      toast.success(active ? 'تم تفعيل الاشتراك' : 'تم إيقاف الاشتراك');
+      fetchTeachers();
+    } catch {
+      toast.error('فشل في تغيير حالة الاشتراك');
+    }
+  };
+
+  const getSubscriptionStatus = (t: Teacher) => {
+    if (t.subscription_active) return { label: 'مفعّل', color: 'text-emerald-500' };
+    const trialEnd = t.trial_ends_at ? new Date(t.trial_ends_at) : null;
+    if (trialEnd && new Date() < trialEnd) return { label: 'تجريبي', color: 'text-amber-500' };
+    return { label: 'متوقف', color: 'text-destructive' };
+  };
+
   const totalStats = {
     teachers: teachers.length,
     quizzes: Object.values(stats).reduce((s, t) => s + t.quizzes, 0),
