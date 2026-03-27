@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft } from 'lucide-react';
+import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft, Quote } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeUp = {
@@ -163,6 +163,53 @@ const LandingPage = () => {
                 </motion.div>
                 <h3 className="text-sm sm:text-xl font-bold mb-1 sm:mb-2">{f.title}</h3>
                 <p className="text-muted-foreground text-xs sm:text-base">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-12 sm:py-24 px-4 sm:px-6 bg-muted/30">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={fadeUp}
+            className="text-center mb-8 sm:mb-14"
+          >
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">ماذا يقول مستخدمونا</h2>
+            <p className="text-muted-foreground text-sm sm:text-lg">آراء المعلمين والمعلمات الذين يستخدمون المنصة</p>
+          </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {[
+              { name: 'محمد آل فروان', text: 'منصة رائعة سهّلت عليّ تنظيم المحتوى التعليمي وتفاعل الطلاب بشكل ملحوظ', role: 'معلم' },
+              { name: 'منى الشهراني', text: 'الألعاب التعليمية أضافت متعة حقيقية للتعلم وزادت من دافعية طالباتي', role: 'معلمة' },
+              { name: 'زياد الحربي', text: 'لوحة الأداء ساعدتني في متابعة تقدم الطلاب بسهولة واتخاذ قرارات تعليمية أفضل', role: 'معلم' },
+              { name: 'منيرة عبدالله', text: 'أفضل منصة تعليمية استخدمتها، الاختبارات التفاعلية وفّرت عليّ وقتاً كبيراً', role: 'معلمة' },
+              { name: 'ابتهال القرني', text: 'تجربة مميزة جداً، الطالبات يحبون الصفحة العامة والمشاركة في الأنشطة', role: 'معلمة' },
+            ].map((t, i) => (
+              <motion.div
+                key={i}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={fadeUp}
+                className="relative p-5 sm:p-6 rounded-2xl bg-card border border-border hover:border-primary/20 transition-colors duration-300"
+              >
+                <Quote className="w-8 h-8 sm:w-10 sm:h-10 text-primary/15 absolute top-4 left-4 rotate-180" />
+                <p className="text-foreground/80 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5 pt-4">{t.text}</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm sm:text-base">
+                    {t.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm sm:text-base">{t.name}</p>
+                    <p className="text-muted-foreground text-xs">{t.role}</p>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
