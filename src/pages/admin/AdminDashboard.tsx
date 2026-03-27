@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Plus, Trash2, LogOut, Shield, BookOpen, Video, Gamepad2, ExternalLink, Copy, Check, BarChart3, Eye } from 'lucide-react';
+import { Users, Plus, Trash2, LogOut, Shield, BookOpen, Video, Gamepad2, ExternalLink, Copy, Check, BarChart3, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,8 @@ interface Teacher {
   created_at: string;
   public_slug: string | null;
   school_name: string | null;
+  trial_ends_at: string | null;
+  subscription_active: boolean;
 }
 
 interface TeacherStats {
@@ -45,7 +47,7 @@ const AdminDashboard = () => {
 
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, full_name, created_at, public_slug, school_name')
+      .select('id, email, full_name, created_at, public_slug, school_name, trial_ends_at, subscription_active')
       .in('id', teacherIds);
     setTeachers((data as any) || []);
 
