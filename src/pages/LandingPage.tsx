@@ -20,7 +20,7 @@ function AnimatedCounter({ target, duration = 2 }: { target: number; duration?: 
     return () => controls.stop();
   }, [isInView, target, duration]);
 
-  return <span ref={ref}>{display.toLocaleString('ar-SA')}</span>;
+  return <span ref={ref}>{display.toLocaleString('en-US')}</span>;
 }
 
 const fadeUp = {
