@@ -207,6 +207,35 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Stats */}
+      <section className="py-12 sm:py-20 px-4 sm:px-6 bg-muted/30">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-3 gap-3 sm:gap-8">
+            {[
+              { icon: GraduationCap, label: 'معلم', value: stats.teachers, color: 'text-primary' },
+              { icon: ClipboardList, label: 'اختبار', value: stats.quizzes, color: 'text-accent' },
+              { icon: Users, label: 'طالب', value: stats.students, color: 'text-primary' },
+            ].map((s, i) => (
+              <motion.div
+                key={i}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+                variants={fadeUp}
+                className="text-center p-4 sm:p-8 rounded-2xl bg-card border border-border"
+              >
+                <s.icon className={`w-7 h-7 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 ${s.color}`} />
+                <div className="text-2xl sm:text-4xl font-black mb-1">
+                  <AnimatedCounter target={s.value} />
+                </div>
+                <p className="text-muted-foreground text-xs sm:text-sm">{s.label}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
       <section className="py-12 sm:py-24 px-4 sm:px-6 bg-muted/30">
         <div className="max-w-6xl mx-auto">
