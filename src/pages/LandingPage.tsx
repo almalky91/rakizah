@@ -13,41 +13,41 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="gradient-hero min-h-screen flex flex-col">
-        <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto w-full">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Star className="w-6 h-6 text-primary-foreground" />
+      <section className="gradient-hero min-h-screen flex flex-col overflow-hidden">
+        <nav className="flex items-center justify-between p-4 sm:p-6 max-w-7xl mx-auto w-full">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl gradient-primary flex items-center justify-center">
+              <Star className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-primary-foreground">منصتي التعليمية</span>
+            <span className="text-base sm:text-xl font-bold text-primary-foreground">منصتي التعليمية</span>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <Link to="/login">
-              <Button variant="outline" className="border-primary/30 text-primary-foreground bg-primary/10 hover:bg-primary/20">
+              <Button variant="outline" size="sm" className="border-primary/30 text-primary-foreground bg-primary/10 hover:bg-primary/20 text-xs sm:text-sm px-2 sm:px-4">
                 تسجيل الدخول
               </Button>
             </Link>
             <Link to="/register">
-              <Button variant="hero">إنشاء حساب</Button>
+              <Button variant="hero" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">إنشاء حساب</Button>
             </Link>
           </div>
         </nav>
 
-        <div className="flex-1 flex items-center justify-center px-6">
-          <div className="text-center max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary-foreground/80 text-sm mb-6">
-              <Star className="w-4 h-4 text-accent" />
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6">
+          <div className="text-center max-w-3xl w-full">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-primary/20 text-primary-foreground/80 text-xs sm:text-sm mb-4 sm:mb-6">
+              <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
               منصة تعليمية متكاملة
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-primary-foreground leading-tight mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-primary-foreground leading-tight mb-4 sm:mb-6">
               تعلّم، العب، <span className="text-gradient">وتميّز</span>
             </h1>
-            <p className="text-lg md:text-xl text-primary-foreground/70 mb-10 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-lg md:text-xl text-primary-foreground/70 mb-6 sm:mb-10 max-w-2xl mx-auto px-2">
               منصة تعليمية تجمع بين الفيديوهات والاختبارات والألعاب التفاعلية لتجربة تعليمية ممتعة وفعّالة
             </p>
             <div className="flex gap-4 justify-center">
               <Link to="/register">
-                <Button variant="gold" size="lg" className="text-lg px-8">
+                <Button variant="gold" size="lg" className="text-base sm:text-lg px-6 sm:px-8">
                   ابدأ الآن مجاناً
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
@@ -56,20 +56,20 @@ const LandingPage = () => {
           </div>
         </div>
 
-        <div className="flex justify-center pb-12">
-          <div className="flex items-center gap-6 text-primary-foreground/50 text-sm">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+        <div className="flex justify-center pb-8 sm:pb-12 px-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-primary-foreground/50 text-xs sm:text-sm">
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>طلاب غير محدودين</span>
             </div>
-            <div className="w-1 h-1 rounded-full bg-primary-foreground/30" />
-            <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
+            <div className="w-1 h-1 rounded-full bg-primary-foreground/30 hidden sm:block" />
+            <div className="flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>ألعاب تعليمية</span>
             </div>
-            <div className="w-1 h-1 rounded-full bg-primary-foreground/30" />
-            <div className="flex items-center gap-2">
-              <Video className="w-4 h-4" />
+            <div className="w-1 h-1 rounded-full bg-primary-foreground/30 hidden sm:block" />
+            <div className="flex items-center gap-1.5">
+              <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>فيديوهات يوتيوب</span>
             </div>
           </div>
