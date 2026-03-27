@@ -7,33 +7,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Star, ShieldCheck, GraduationCap, Users } from 'lucide-react';
+import { Star, ShieldCheck, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 
 const tabs = [
   { value: 'admin', label: 'مدير نظام', icon: ShieldCheck },
   { value: 'teacher', label: 'كادر تعليمي', icon: GraduationCap },
-  { value: 'student', label: 'طلبة', icon: Users },
 ];
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('student');
+  const [activeTab, setActiveTab] = useState('teacher');
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const roleMap: Record<string, string> = {
     admin: 'admin',
     teacher: 'teacher',
-    student: 'student',
   };
 
   const roleLabelMap: Record<string, string> = {
     admin: 'مدير نظام',
     teacher: 'كادر تعليمي',
-    student: 'طالب',
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +39,6 @@ const LoginPage = () => {
     try {
       await signIn(email, password);
 
-      // Verify role matches selected tab
       const { data } = await supabase
         .from('user_roles')
         .select('role')
@@ -81,7 +77,7 @@ const LoginPage = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6" dir="rtl">
-            <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+            <TabsList className="grid w-full grid-cols-2 h-auto p-1">
               {tabs.map(tab => {
                 const Icon = tab.icon;
                 return (
@@ -110,12 +106,6 @@ const LoginPage = () => {
             <Button type="submit" variant="hero" className="w-full" disabled={loading}>
               {loading ? 'جاري التسجيل...' : 'تسجيل الدخول'}
             </Button>
-            {activeTab === 'student' && (
-              <p className="text-center text-sm text-muted-foreground">
-                ليس لديك حساب؟{' '}
-                <Link to="/register" className="text-primary font-medium hover:underline">إنشاء حساب</Link>
-              </p>
-            )}
           </form>
         </CardContent>
       </Card>

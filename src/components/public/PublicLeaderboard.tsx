@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card, CardContent } from '@/components/ui/card';
-import { Trophy, Star, Award } from 'lucide-react';
+import { Trophy, Star, Award, X } from 'lucide-react';
 
 interface LeaderboardEntry {
   student_name: string;
@@ -17,6 +16,7 @@ interface Props {
 const PublicLeaderboard = ({ teacherId }: Props) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,7 +34,6 @@ const PublicLeaderboard = ({ teacherId }: Props) => {
       const quizData = (quizRes.data as any[]) || [];
       const videoData = (videoRes.data as any[]) || [];
 
-      // Aggregate by student name
       const videoWatchers = new Set(videoData.map((v: any) => v.student_name));
       const studentMap = new Map<string, { totalScore: number; quizCount: number }>();
 
@@ -45,7 +44,6 @@ const PublicLeaderboard = ({ teacherId }: Props) => {
         studentMap.set(r.student_name, existing);
       });
 
-      // Also add video-only watchers
       videoWatchers.forEach(name => {
         if (!studentMap.has(name)) {
           studentMap.set(name, { totalScore: 0, quizCount: 0 });
@@ -77,62 +75,83 @@ const PublicLeaderboard = ({ teacherId }: Props) => {
   ];
 
   return (
-    <Card className="overflow-hidden border-border/50 shadow-lg mb-8">
-      <div className="bg-gradient-to-r from-amber-500/90 to-yellow-500/90 p-4">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <Trophy className="w-5 h-5" />
-          لوحة التعزيز - الطلاب المتميزون
-        </h3>
-      </div>
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {entries.map((entry, i) => (
-            <div
-              key={entry.student_name}
-              className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-            >
-              {/* Rank */}
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                  i < 3
-                    ? `bg-gradient-to-br ${rankStyles[i]}`
-                    : 'bg-muted-foreground/20 text-muted-foreground'
-                }`}
-              >
-                {i < 3 ? <Award className="w-5 h-5" /> : i + 1}
-              </div>
+    <>
+      {/* Floating trophy button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-amber-950 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center animate-bounce"
+        style={{ animationDuration: '2s', animationIterationCount: 3 }}
+        title="لوحة التعزيز"
+      >
+        <Trophy className="w-6 h-6" />
+        <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+          {entries.length}
+        </span>
+      </button>
 
-              {/* Name */}
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{entry.student_name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {entry.quiz_count > 0
-                    ? `${entry.quiz_count} اختبار • ${entry.total_score} درجة`
-                    : 'مشاهد نشط'}
-                </p>
-              </div>
-
-              {/* Video badge */}
-              {entry.watched_videos && (
-                <div className="shrink-0" title="شاهد مقاطع الفيديو">
-                  <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                </div>
-              )}
-
-              {/* Score */}
-              <span className="text-sm font-bold text-primary shrink-0">
-                {entry.total_score} نقطة
-              </span>
+      {/* Overlay panel */}
+      {isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+          <div className="relative z-10 w-full max-w-md mx-4 mb-4 sm:mb-0 bg-card rounded-2xl shadow-2xl border border-border/50 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-amber-500/90 to-yellow-500/90 p-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Trophy className="w-5 h-5" />
+                لوحة التعزيز
+              </h3>
+              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-          ))}
-        </div>
 
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/50 text-xs text-muted-foreground">
-          <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-          <span>النجمة تعني أن الطالب شاهد مقاطع الفيديو</span>
+            {/* List */}
+            <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+              {entries.map((entry, i) => (
+                <div
+                  key={entry.student_name}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                      i < 3
+                        ? `bg-gradient-to-br ${rankStyles[i]}`
+                        : 'bg-muted-foreground/20 text-muted-foreground'
+                    }`}
+                  >
+                    {i < 3 ? <Award className="w-5 h-5" /> : i + 1}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{entry.student_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {entry.quiz_count > 0
+                        ? `${entry.quiz_count} اختبار • ${entry.total_score} درجة`
+                        : 'مشاهد نشط'}
+                    </p>
+                  </div>
+
+                  {entry.watched_videos && (
+                    <div className="shrink-0" title="شاهد مقاطع الفيديو">
+                      <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                    </div>
+                  )}
+
+                  <span className="text-sm font-bold text-primary shrink-0">
+                    {entry.total_score} نقطة
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 px-4 py-3 border-t border-border/50 text-xs text-muted-foreground">
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              <span>النجمة تعني أن الطالب شاهد مقاطع الفيديو</span>
+            </div>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 };
 
