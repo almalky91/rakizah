@@ -85,7 +85,7 @@ const LandingPage = () => {
             >
               <Star className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </motion.div>
-            <span className="text-base sm:text-xl font-bold text-primary-foreground">منصتي التعليمية</span>
+            <span className="text-sm sm:text-xl font-bold text-primary-foreground">منصتي التعليمية</span>
           </div>
           <div className="flex gap-2 sm:gap-3">
             <Link to="/login">
@@ -114,7 +114,7 @@ const LandingPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-3xl sm:text-4xl md:text-6xl font-black text-primary-foreground leading-tight mb-4 sm:mb-6"
+              className="text-2xl sm:text-4xl md:text-6xl font-extrabold text-primary-foreground leading-tight mb-3 sm:mb-6"
             >
               تعلّم، العب، <span className="text-gradient">وتميّز</span>
             </motion.h1>
@@ -122,7 +122,7 @@ const LandingPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.45 }}
-              className="text-sm sm:text-lg md:text-xl text-primary-foreground/70 mb-6 sm:mb-10 max-w-2xl mx-auto px-2"
+              className="text-xs sm:text-base md:text-xl text-primary-foreground/70 mb-5 sm:mb-10 max-w-2xl mx-auto px-2 leading-relaxed"
             >
               منصة تعليمية تجمع بين الفيديوهات والاختبارات والألعاب التفاعلية لتجربة تعليمية ممتعة وفعّالة
             </motion.p>
@@ -133,7 +133,7 @@ const LandingPage = () => {
               className="flex gap-4 justify-center"
             >
               <Link to="/register">
-                <Button variant="gold" size="lg" className="text-base sm:text-lg px-6 sm:px-8">
+                <Button variant="gold" size="sm" className="text-sm sm:text-lg sm:px-8 sm:py-6 px-5">
                   ابدأ الآن مجاناً
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
@@ -177,8 +177,8 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-center mb-8 sm:mb-16"
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">كل ما تحتاجه في مكان واحد</h2>
-            <p className="text-muted-foreground text-sm sm:text-lg">أدوات تعليمية متكاملة لتجربة تعليمية استثنائية</p>
+            <h2 className="text-xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">كل ما تحتاجه في مكان واحد</h2>
+            <p className="text-muted-foreground text-xs sm:text-lg">أدوات تعليمية متكاملة لتجربة تعليمية استثنائية</p>
           </motion.div>
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {features.map((f, i) => (
@@ -195,12 +195,12 @@ const LandingPage = () => {
                 <motion.div
                   whileHover={{ scale: 1.15, rotate: 5 }}
                   transition={{ type: 'spring', stiffness: 300 }}
-                  className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl gradient-primary flex items-center justify-center mb-3 sm:mb-4"
+                  className="w-9 h-9 sm:w-14 sm:h-14 rounded-xl gradient-primary flex items-center justify-center mb-2 sm:mb-4"
                 >
-                  <f.icon className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
+                  <f.icon className="w-4 h-4 sm:w-7 sm:h-7 text-primary-foreground" />
                 </motion.div>
-                <h3 className="text-sm sm:text-xl font-bold mb-1 sm:mb-2">{f.title}</h3>
-                <p className="text-muted-foreground text-xs sm:text-base">{f.desc}</p>
+                <h3 className="text-xs sm:text-lg font-bold mb-0.5 sm:mb-2">{f.title}</h3>
+                <p className="text-muted-foreground text-[10px] sm:text-sm leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -225,11 +225,11 @@ const LandingPage = () => {
                 variants={fadeUp}
                 className="text-center p-4 sm:p-8 rounded-2xl bg-card border border-border"
               >
-                <s.icon className={`w-7 h-7 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 ${s.color}`} />
-                <div className="text-2xl sm:text-4xl font-black mb-1">
+                <s.icon className={`w-6 h-6 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-3 ${s.color}`} />
+                <div className="text-xl sm:text-4xl font-bold mb-0.5">
                   <AnimatedCounter target={s.value} />
                 </div>
-                <p className="text-muted-foreground text-xs sm:text-sm">{s.label}</p>
+                <p className="text-muted-foreground text-[10px] sm:text-sm">{s.label}</p>
               </motion.div>
             ))}
           </div>
@@ -246,8 +246,8 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-center mb-8 sm:mb-14"
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">ماذا يقول مستخدمونا</h2>
-            <p className="text-muted-foreground text-sm sm:text-lg">آراء المعلمين والمعلمات الذين يستخدمون المنصة</p>
+            <h2 className="text-xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-4">ماذا يقول مستخدمونا</h2>
+            <p className="text-muted-foreground text-xs sm:text-lg">آراء المعلمين والمعلمات الذين يستخدمون المنصة</p>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
@@ -268,12 +268,12 @@ const LandingPage = () => {
               >
                 <Quote className="w-8 h-8 sm:w-10 sm:h-10 text-primary/15 absolute top-4 left-4 rotate-180" />
                 <p className="text-foreground/80 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5 pt-4">{t.text}</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm sm:text-base">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-xs sm:text-base">
                     {t.name.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-semibold text-sm sm:text-base">{t.name}</p>
+                    <p className="font-semibold text-xs sm:text-base">{t.name}</p>
                     <p className="text-muted-foreground text-xs">{t.role}</p>
                   </div>
                 </div>
