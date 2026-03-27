@@ -26,12 +26,17 @@ const RegisterPage = () => {
       const { data, error } = await supabase.functions.invoke('register-teacher', {
         body: { email, password, fullName },
       });
-      if (error) throw error;
+      if (error) {
+        // Try to parse error body for Arabic message
+        const errMsg = typeof error === 'object' && error.message ? error.message : 'فشل إنشاء الحساب';
+        throw new Error(errMsg);
+      }
       if (data?.error) throw new Error(data.error);
       toast.success('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن مع فترة تجريبية مجانية ليوم واحد');
       navigate('/login');
     } catch (err: any) {
-      toast.error(err.message || 'فشل إنشاء الحساب');
+      const message = err.message || 'فشل إنشاء الحساب';
+      toast.error(message.includes('already been registered') ? 'هذا البريد الإلكتروني مسجل مسبقاً' : message);
     } finally {
       setLoading(false);
     }
