@@ -17,11 +17,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify caller is admin
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
-    
+
     if (!caller) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -43,31 +42,16 @@ serve(async (req) => {
       });
     }
 
-    const { email, password, fullName } = await req.json();
+    const { teacherId, active } = await req.json();
 
-    // Create user
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { full_name: fullName },
-    });
-
-    if (createError) throw createError;
-
-    // Set role to teacher (override the default student role from trigger)
-    await supabaseAdmin
-      .from("user_roles")
-      .update({ role: "teacher" })
-      .eq("user_id", newUser.user.id);
-
-    // Admin-created teachers get activated subscription
-    await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("profiles")
-      .update({ subscription_active: true })
-      .eq("id", newUser.user.id);
+      .update({ subscription_active: active })
+      .eq("id", teacherId);
 
-    return new Response(JSON.stringify({ user: newUser.user }), {
+    if (error) throw error;
+
+    return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
