@@ -71,52 +71,12 @@ const PerformanceBoard = () => {
     if (!user) return;
     const { error } = await supabase.from('public_quiz_results').delete().eq('teacher_id', user.id).eq('student_name', studentName);
     if (error) { toast.error('فشل في الحذف'); return; }
-    // Also delete video views for this student
     await supabase.from('public_video_views').delete().eq('teacher_id', user.id).eq('student_name', studentName);
     toast.success(`تم حذف جميع بيانات الطالب "${studentName}"`);
     fetchData();
   };
 
-  // Get unique students
   const uniqueStudents = [...new Set(publicResults.map(r => r.student_name))];
-
-  const fetchStats = async () => {
-      const [videosRes, publicResRes, quizzesRes] = await Promise.all([
-        supabase.from('videos').select('views').eq('teacher_id', user.id),
-        supabase.from('public_quiz_results').select('*').eq('teacher_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('quizzes').select('id, title').eq('teacher_id', user.id),
-      ]);
-
-      const totalViews = videosRes.data?.reduce((sum, v) => sum + (v.views || 0), 0) || 0;
-      const publicData = (publicResRes.data as any[]) || [];
-      const quizMap = new Map((quizzesRes.data || []).map(q => [q.id, q.title]));
-
-      const uniquePublicStudents = new Set(publicData.map(r => r.student_name));
-      const avgScore = publicData.length
-        ? Math.round(publicData.reduce((sum, r) => sum + (r.score / r.total_questions) * 100, 0) / publicData.length)
-        : 0;
-
-      setStats({
-        totalViews,
-        publicStudents: uniquePublicStudents.size,
-        avgScore,
-        totalQuizAttempts: publicData.length,
-      });
-
-      setPublicResults(
-        publicData.map(r => ({
-          id: r.id,
-          student_name: r.student_name,
-          score: r.score,
-          total_questions: r.total_questions,
-          quiz_title: quizMap.get(r.quiz_id) || 'اختبار محذوف',
-          created_at: r.created_at,
-        }))
-      );
-    };
-
-    fetchStats();
-  }, [user]);
 
   return (
     <div className="space-y-6">
@@ -172,6 +132,55 @@ const PerformanceBoard = () => {
         </Card>
       </div>
 
+      {/* Students list with delete */}
+      {uniqueStudents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              الطلاب المشاركون ({uniqueStudents.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {uniqueStudents.map(name => {
+                const studentResults = publicResults.filter(r => r.student_name === name);
+                const avgPct = Math.round(studentResults.reduce((s, r) => s + (r.score / r.total_questions) * 100, 0) / studentResults.length);
+                return (
+                  <div key={name} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border/50">
+                    <div>
+                      <p className="font-semibold text-sm">{name}</p>
+                      <p className="text-xs text-muted-foreground">{studentResults.length} اختبار · {avgPct}%</p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>حذف بيانات الطالب</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            هل أنت متأكد من حذف جميع نتائج ومشاهدات الطالب "{name}"؟ لا يمكن التراجع عن هذا الإجراء.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteStudentResults(name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            حذف
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -192,6 +201,7 @@ const PerformanceBoard = () => {
                     <TableHead className="text-center">الدرجة</TableHead>
                     <TableHead className="text-center">النسبة</TableHead>
                     <TableHead className="text-right">التاريخ</TableHead>
+                    <TableHead className="text-center">حذف</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -213,6 +223,11 @@ const PerformanceBoard = () => {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(r.created_at).toLocaleDateString('ar-SA')}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button variant="ghost" size="icon" onClick={() => deleteResult(r.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
