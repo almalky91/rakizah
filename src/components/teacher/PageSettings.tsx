@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Eye, Check } from 'lucide-react';
+import { Save, Palette, Eye, Check, User, Link2 } from 'lucide-react';
 
 const TEMPLATES = [
   {
@@ -68,6 +68,9 @@ const TEMPLATES = [
 
 const PageSettings = () => {
   const { user } = useAuth();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [publicSlug, setPublicSlug] = useState('');
   const [pageTitle, setPageTitle] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [bio, setBio] = useState('');
@@ -80,10 +83,13 @@ const PageSettings = () => {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('page_title, school_name, bio, page_template')
+        .select('full_name, email, public_slug, page_title, school_name, bio, page_template')
         .eq('id', user.id)
         .single();
       if (data) {
+        setFullName(data.full_name || '');
+        setEmail(data.email || '');
+        setPublicSlug(data.public_slug || '');
         setPageTitle(data.page_title || '');
         setSchoolName((data as any).school_name || '');
         setBio((data as any).bio || '');
@@ -96,10 +102,37 @@ const PageSettings = () => {
 
   const handleSave = async () => {
     if (!user) return;
+    
+    // Validate slug
+    const slugClean = publicSlug.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+    if (slugClean && slugClean.length < 3) {
+      toast.error('الرابط يجب أن يكون 3 أحرف على الأقل');
+      return;
+    }
+
     setSaving(true);
+
+    // Check slug uniqueness
+    if (slugClean) {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('public_slug', slugClean)
+        .neq('id', user.id)
+        .maybeSingle();
+      if (existing) {
+        toast.error('هذا الرابط مستخدم بالفعل، اختر رابطاً آخر');
+        setSaving(false);
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({
+        full_name: fullName || null,
+        email: email || null,
+        public_slug: slugClean || null,
         page_title: pageTitle || null,
         school_name: schoolName || null,
         bio: bio || null,
@@ -125,6 +158,55 @@ const PageSettings = () => {
 
   return (
     <div className="space-y-8">
+      {/* معلومات المعلم */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5 text-primary" />
+            معلومات المعلم
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">اسم المعلم</Label>
+            <Input
+              id="fullName"
+              placeholder="مثال: أحمد محمد"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">البريد الإلكتروني</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="example@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              dir="ltr"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="publicSlug">رابط الصفحة العامة</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap" dir="ltr">
+                {window.location.origin}/p/
+              </span>
+              <Input
+                id="publicSlug"
+                placeholder="رابط مخصص"
+                value={publicSlug}
+                onChange={(e) => setPublicSlug(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
+                dir="ltr"
+                className="font-mono"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">يمكنك تخصيص الرابط باستخدام أحرف إنجليزية وأرقام فقط</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* معلومات الصفحة */}
       <Card>
         <CardHeader>
