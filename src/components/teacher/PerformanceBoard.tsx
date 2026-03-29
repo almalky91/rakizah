@@ -3,7 +3,10 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart3, Eye, Trophy, Users, FileText, Star } from 'lucide-react';
+import { BarChart3, Eye, Trophy, Users, FileText, Star, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface PublicResult {
   id: string;
@@ -19,10 +22,65 @@ const PerformanceBoard = () => {
   const [stats, setStats] = useState({ totalViews: 0, publicStudents: 0, avgScore: 0, totalQuizAttempts: 0 });
   const [publicResults, setPublicResults] = useState<PublicResult[]>([]);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!user) return;
+    const [videosRes, publicResRes, quizzesRes] = await Promise.all([
+      supabase.from('videos').select('views').eq('teacher_id', user.id),
+      supabase.from('public_quiz_results').select('*').eq('teacher_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('quizzes').select('id, title').eq('teacher_id', user.id),
+    ]);
 
-    const fetchStats = async () => {
+    const totalViews = videosRes.data?.reduce((sum, v) => sum + (v.views || 0), 0) || 0;
+    const publicData = (publicResRes.data as any[]) || [];
+    const quizMap = new Map((quizzesRes.data || []).map(q => [q.id, q.title]));
+
+    const uniquePublicStudents = new Set(publicData.map(r => r.student_name));
+    const avgScore = publicData.length
+      ? Math.round(publicData.reduce((sum, r) => sum + (r.score / r.total_questions) * 100, 0) / publicData.length)
+      : 0;
+
+    setStats({
+      totalViews,
+      publicStudents: uniquePublicStudents.size,
+      avgScore,
+      totalQuizAttempts: publicData.length,
+    });
+
+    setPublicResults(
+      publicData.map(r => ({
+        id: r.id,
+        student_name: r.student_name,
+        score: r.score,
+        total_questions: r.total_questions,
+        quiz_title: quizMap.get(r.quiz_id) || 'اختبار محذوف',
+        created_at: r.created_at,
+      }))
+    );
+  };
+
+  useEffect(() => { fetchData(); }, [user]);
+
+  const deleteResult = async (id: string) => {
+    const { error } = await supabase.from('public_quiz_results').delete().eq('id', id);
+    if (error) { toast.error('فشل في الحذف'); return; }
+    toast.success('تم حذف النتيجة');
+    fetchData();
+  };
+
+  const deleteStudentResults = async (studentName: string) => {
+    if (!user) return;
+    const { error } = await supabase.from('public_quiz_results').delete().eq('teacher_id', user.id).eq('student_name', studentName);
+    if (error) { toast.error('فشل في الحذف'); return; }
+    // Also delete video views for this student
+    await supabase.from('public_video_views').delete().eq('teacher_id', user.id).eq('student_name', studentName);
+    toast.success(`تم حذف جميع بيانات الطالب "${studentName}"`);
+    fetchData();
+  };
+
+  // Get unique students
+  const uniqueStudents = [...new Set(publicResults.map(r => r.student_name))];
+
+  const fetchStats = async () => {
       const [videosRes, publicResRes, quizzesRes] = await Promise.all([
         supabase.from('videos').select('views').eq('teacher_id', user.id),
         supabase.from('public_quiz_results').select('*').eq('teacher_id', user.id).order('created_at', { ascending: false }),
