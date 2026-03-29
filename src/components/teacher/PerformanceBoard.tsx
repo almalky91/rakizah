@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +24,7 @@ const PerformanceBoard = () => {
   const [stats, setStats] = useState({ totalViews: 0, publicStudents: 0, avgScore: 0, totalQuizAttempts: 0 });
   const [publicResults, setPublicResults] = useState<PublicResult[]>([]);
 
-  const printRef = React.createRef<HTMLDivElement>();
+  const printRef = useRef<HTMLDivElement>(null);
 
   const fetchData = async () => {
     if (!user) return;
