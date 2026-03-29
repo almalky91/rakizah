@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart3, Eye, Trophy, Users, FileText, Star, Trash2, Download } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -81,118 +81,128 @@ const PerformanceBoard = () => {
   const uniqueStudents = [...new Set(publicResults.map(r => r.student_name))];
 
   const exportPDF = () => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    
-    // Load Arabic font support - use built-in helvetica for now
-    doc.setFont('helvetica');
-    
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 20;
+    try {
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const fileName = 'performance-board.pdf';
 
-    // Title
-    doc.setFontSize(20);
-    doc.setTextColor(33, 33, 33);
-    doc.text('Performance Board', pageWidth / 2, y, { align: 'center' });
-    y += 8;
-    doc.setFontSize(10);
-    doc.setTextColor(120, 120, 120);
-    doc.text(new Date().toLocaleDateString('en-SA'), pageWidth / 2, y, { align: 'center' });
-    y += 12;
+      doc.setFont('helvetica');
 
-    // Stats boxes
-    doc.setFontSize(11);
-    doc.setTextColor(33, 33, 33);
-    const statsData = [
-      { label: 'Total Views', value: stats.totalViews.toString() },
-      { label: 'Students', value: stats.publicStudents.toString() },
-      { label: 'Avg Score', value: `${stats.avgScore}%` },
-      { label: 'Quiz Attempts', value: stats.totalQuizAttempts.toString() },
-    ];
-    const boxW = (pageWidth - 30) / 4;
-    statsData.forEach((s, i) => {
-      const x = 10 + i * (boxW + 3.3);
-      doc.setFillColor(245, 245, 250);
-      doc.roundedRect(x, y, boxW, 22, 3, 3, 'F');
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text(s.value, x + boxW / 2, y + 10, { align: 'center' });
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text(s.label, x + boxW / 2, y + 17, { align: 'center' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let y = 20;
+
+      doc.setFontSize(20);
       doc.setTextColor(33, 33, 33);
-    });
-    y += 30;
+      doc.text('Performance Board', pageWidth / 2, y, { align: 'center' });
+      y += 8;
+      doc.setFontSize(10);
+      doc.setTextColor(120, 120, 120);
+      doc.text(new Date().toLocaleDateString('en-SA'), pageWidth / 2, y, { align: 'center' });
+      y += 12;
 
-    // Students summary table
-    if (uniqueStudents.length > 0) {
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Students (${uniqueStudents.length})`, pageWidth / 2, y, { align: 'center' });
-      y += 6;
+      doc.setFontSize(11);
+      doc.setTextColor(33, 33, 33);
+      const statsData = [
+        { label: 'Total Views', value: stats.totalViews.toString() },
+        { label: 'Students', value: stats.publicStudents.toString() },
+        { label: 'Avg Score', value: `${stats.avgScore}%` },
+        { label: 'Quiz Attempts', value: stats.totalQuizAttempts.toString() },
+      ];
 
-      const studentRows = uniqueStudents.map(name => {
-        const sr = publicResults.filter(r => r.student_name === name);
-        const avg = Math.round(sr.reduce((s, r) => s + (r.score / r.total_questions) * 100, 0) / sr.length);
-        return [name, sr.length.toString(), `${avg}%`];
+      const boxW = (pageWidth - 30) / 4;
+      statsData.forEach((s, i) => {
+        const x = 10 + i * (boxW + 3.3);
+        doc.setFillColor(245, 245, 250);
+        doc.roundedRect(x, y, boxW, 22, 3, 3, 'F');
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(s.value, x + boxW / 2, y + 10, { align: 'center' });
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(s.label, x + boxW / 2, y + 17, { align: 'center' });
+        doc.setTextColor(33, 33, 33);
       });
+      y += 30;
 
-      (doc as any).autoTable({
-        startY: y,
-        head: [['Student', 'Attempts', 'Avg %']],
-        body: studentRows,
-        theme: 'grid',
-        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 10, halign: 'center' },
-        bodyStyles: { fontSize: 9, halign: 'center' },
-        margin: { left: 15, right: 15 },
-        styles: { cellPadding: 3 },
-      });
-      y = (doc as any).lastAutoTable.finalY + 10;
+      if (uniqueStudents.length > 0) {
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Students (${uniqueStudents.length})`, pageWidth / 2, y, { align: 'center' });
+        y += 6;
+
+        const studentRows = uniqueStudents.map(name => {
+          const sr = publicResults.filter(r => r.student_name === name);
+          const avg = Math.round(sr.reduce((s, r) => s + (r.score / r.total_questions) * 100, 0) / sr.length);
+          return [name, sr.length.toString(), `${avg}%`];
+        });
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Student', 'Attempts', 'Avg %']],
+          body: studentRows,
+          theme: 'grid',
+          headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 10, halign: 'center' },
+          bodyStyles: { fontSize: 9, halign: 'center' },
+          margin: { left: 15, right: 15 },
+          styles: { cellPadding: 3 },
+        });
+        y = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ? ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable!.finalY + 10) : y + 10;
+      }
+
+      if (publicResults.length > 0) {
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Quiz Results', pageWidth / 2, y, { align: 'center' });
+        y += 6;
+
+        const resultRows = publicResults.map(r => {
+          const pct = Math.round((r.score / r.total_questions) * 100);
+          return [
+            r.student_name,
+            r.quiz_title,
+            `${r.score}/${r.total_questions}`,
+            `${pct}%`,
+            new Date(r.created_at).toLocaleDateString('en-SA'),
+          ];
+        });
+
+        autoTable(doc, {
+          startY: y,
+          head: [['Student', 'Quiz', 'Score', '%', 'Date']],
+          body: resultRows,
+          theme: 'grid',
+          headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9, halign: 'center' },
+          bodyStyles: { fontSize: 8, halign: 'center' },
+          margin: { left: 10, right: 10 },
+          styles: { cellPadding: 2.5, overflow: 'linebreak' },
+          columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 50 } },
+        });
+      }
+
+      const totalPages = doc.internal.pages.length - 1;
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Page ${i} / ${totalPages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+        doc.text('Rakizah Platform', 10, doc.internal.pageSize.getHeight() - 8);
+      }
+
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      toast.success('تم تصدير التقرير بنجاح');
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      toast.error('تعذر تصدير التقرير');
     }
-
-    // Results table
-    if (publicResults.length > 0) {
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Quiz Results', pageWidth / 2, y, { align: 'center' });
-      y += 6;
-
-      const resultRows = publicResults.map(r => {
-        const pct = Math.round((r.score / r.total_questions) * 100);
-        return [
-          r.student_name,
-          r.quiz_title,
-          `${r.score}/${r.total_questions}`,
-          `${pct}%`,
-          new Date(r.created_at).toLocaleDateString('en-SA'),
-        ];
-      });
-
-      (doc as any).autoTable({
-        startY: y,
-        head: [['Student', 'Quiz', 'Score', '%', 'Date']],
-        body: resultRows,
-        theme: 'grid',
-        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontSize: 9, halign: 'center' },
-        bodyStyles: { fontSize: 8, halign: 'center' },
-        margin: { left: 10, right: 10 },
-        styles: { cellPadding: 2.5, overflow: 'linebreak' },
-        columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 50 } },
-      });
-    }
-
-    // Footer on each page
-    const totalPages = doc.internal.pages.length - 1;
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} / ${totalPages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
-      doc.text('Rakizah Platform', 10, doc.internal.pageSize.getHeight() - 8);
-    }
-
-    doc.save('performance-board.pdf');
-    toast.success('تم تصدير التقرير بنجاح');
   };
 
   return (
