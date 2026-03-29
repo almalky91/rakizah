@@ -68,6 +68,9 @@ const TEMPLATES = [
 
 const PageSettings = () => {
   const { user } = useAuth();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [publicSlug, setPublicSlug] = useState('');
   const [pageTitle, setPageTitle] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [bio, setBio] = useState('');
@@ -80,10 +83,13 @@ const PageSettings = () => {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('page_title, school_name, bio, page_template')
+        .select('full_name, email, public_slug, page_title, school_name, bio, page_template')
         .eq('id', user.id)
         .single();
       if (data) {
+        setFullName(data.full_name || '');
+        setEmail(data.email || '');
+        setPublicSlug(data.public_slug || '');
         setPageTitle(data.page_title || '');
         setSchoolName((data as any).school_name || '');
         setBio((data as any).bio || '');
@@ -96,10 +102,37 @@ const PageSettings = () => {
 
   const handleSave = async () => {
     if (!user) return;
+    
+    // Validate slug
+    const slugClean = publicSlug.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+    if (slugClean && slugClean.length < 3) {
+      toast.error('الرابط يجب أن يكون 3 أحرف على الأقل');
+      return;
+    }
+
     setSaving(true);
+
+    // Check slug uniqueness
+    if (slugClean) {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('public_slug', slugClean)
+        .neq('id', user.id)
+        .maybeSingle();
+      if (existing) {
+        toast.error('هذا الرابط مستخدم بالفعل، اختر رابطاً آخر');
+        setSaving(false);
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({
+        full_name: fullName || null,
+        email: email || null,
+        public_slug: slugClean || null,
         page_title: pageTitle || null,
         school_name: schoolName || null,
         bio: bio || null,
