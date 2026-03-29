@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Eye, Check } from 'lucide-react';
+import { Save, Palette, Eye, Check, User, Link2 } from 'lucide-react';
 
 const TEMPLATES = [
   {
@@ -158,6 +158,55 @@ const PageSettings = () => {
 
   return (
     <div className="space-y-8">
+      {/* معلومات المعلم */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5 text-primary" />
+            معلومات المعلم
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">اسم المعلم</Label>
+            <Input
+              id="fullName"
+              placeholder="مثال: أحمد محمد"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">البريد الإلكتروني</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="example@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              dir="ltr"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="publicSlug">رابط الصفحة العامة</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap" dir="ltr">
+                {window.location.origin}/p/
+              </span>
+              <Input
+                id="publicSlug"
+                placeholder="رابط مخصص"
+                value={publicSlug}
+                onChange={(e) => setPublicSlug(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
+                dir="ltr"
+                className="font-mono"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">يمكنك تخصيص الرابط باستخدام أحرف إنجليزية وأرقام فقط</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* معلومات الصفحة */}
       <Card>
         <CardHeader>
