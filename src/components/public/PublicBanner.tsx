@@ -1,4 +1,5 @@
-import { GraduationCap, School, BookOpen, Users } from 'lucide-react';
+import { School, BookOpen, Users } from 'lucide-react';
+import logoImg from '@/assets/logo.jpg';
 
 const TEMPLATE_STYLES: Record<string, { gradient: string; accent: string }> = {
   classic: {
