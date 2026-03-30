@@ -69,9 +69,7 @@ const LoginPage = () => {
       <Card className="w-full max-w-md glass">
         <CardHeader className="text-center pb-2">
           <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Star className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img src={logoImg} alt="شعار المنصة" className="w-10 h-10 rounded-xl object-cover" />
             <span className="text-xl font-bold">منصتي التعليمية</span>
           </Link>
           <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>

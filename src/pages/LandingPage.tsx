@@ -82,7 +82,6 @@ const LandingPage = () => {
             <motion.div
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl gradient-primary flex items-center justify-center"
             >
               <img src={logoImg} alt="شعار المنصة" className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover" />
             </motion.div>

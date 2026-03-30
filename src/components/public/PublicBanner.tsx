@@ -64,12 +64,7 @@ const PublicBanner = ({ profile, studentName, totalContent }: PublicBannerProps)
 
           {/* Teacher avatar */}
           <div className="flex justify-center mb-4">
-            <div
-              className="w-20 h-20 rounded-2xl shadow-lg flex items-center justify-center border-4 border-white/20"
-              style={{ background: template.accent }}
-            >
-              <GraduationCap className="w-10 h-10 text-white" />
-            </div>
+            <img src={logoImg} alt="شعار المنصة" className="w-20 h-20 rounded-2xl shadow-lg border-4 border-white/20 object-cover" />
           </div>
 
           {/* Teacher name */}
