@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle, XCircle, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Quiz } from '@/pages/teacher/TeacherPublicPage';
 
 interface Props {
@@ -16,16 +17,26 @@ interface Props {
   onSaveResult: (quizId: string, score: number, totalQuestions: number, answers: Record<number, number>) => Promise<void>;
 }
 
+const slideVariants = {
+  enter: (dir: number) => ({ x: dir > 0 ? 200 : -200, opacity: 0, scale: 0.95 }),
+  center: { x: 0, opacity: 1, scale: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -200 : 200, opacity: 0, scale: 0.95 }),
+};
+
 const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [currentQ, setCurrentQ] = useState(0);
+  const [direction, setDirection] = useState(0);
 
   const total = quiz.questions.length;
   const q = quiz.questions[currentQ];
   const progress = ((currentQ + 1) / total) * 100;
   const percentage = Math.round((score / total) * 100);
+
+  const goNext = () => { setDirection(1); setCurrentQ(c => c + 1); };
+  const goPrev = () => { setDirection(-1); setCurrentQ(c => c - 1); };
 
   const submitQuiz = async () => {
     if (Object.keys(answers).length < total) {
@@ -45,25 +56,57 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
     return (
       <Dialog open onOpenChange={() => onBack()}>
         <DialogContent className="max-w-md" dir="rtl">
-          <div className="gradient-primary text-primary-foreground rounded-xl overflow-hidden -m-6">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', duration: 0.6, bounce: 0.4 }}
+            className="gradient-primary text-primary-foreground rounded-xl overflow-hidden -m-6"
+          >
             <div className="p-8 text-center relative">
               <div className="absolute inset-0 overflow-hidden">
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary-foreground/5 rounded-full" />
                 <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-primary-foreground/5 rounded-full" />
               </div>
               <div className="relative z-10">
-                <Trophy className="w-14 h-14 mx-auto mb-4 text-accent" />
-                <p className="text-5xl font-bold mb-2">{score} / {total}</p>
-                <p className="text-primary-foreground/60 text-lg mb-2">{percentage}%</p>
-                <p className="text-primary-foreground/80 text-lg mb-6">
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', delay: 0.2, duration: 0.8 }}
+                >
+                  <Trophy className="w-14 h-14 mx-auto mb-4 text-accent" />
+                </motion.div>
+                <motion.p
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-5xl font-bold mb-2"
+                >
+                  {score} / {total}
+                </motion.p>
+                <motion.p
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-primary-foreground/60 text-lg mb-2"
+                >
+                  {percentage}%
+                </motion.p>
+                <motion.p
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-primary-foreground/80 text-lg mb-6"
+                >
                   {percentage >= 80 ? '🎉 أحسنت يا ' : percentage >= 50 ? '👍 جيد يا ' : '💪 حاول مرة أخرى يا '}{studentName}
-                </p>
-                <Button variant="ghost" className="text-primary-foreground border border-primary-foreground/30" onClick={onBack}>
-                  العودة للقائمة
-                </Button>
+                </motion.p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
+                  <Button variant="ghost" className="text-primary-foreground border border-primary-foreground/30" onClick={onBack}>
+                    العودة للقائمة
+                  </Button>
+                </motion.div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </DialogContent>
       </Dialog>
     );
@@ -71,56 +114,77 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
 
   return (
     <Dialog open onOpenChange={() => onBack()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden" dir="rtl">
         <DialogHeader className="space-y-3">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg">{quiz.title}</DialogTitle>
             <span className="text-sm text-muted-foreground">{currentQ + 1} / {total}</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-2 transition-all duration-500" />
         </DialogHeader>
 
-        <div className="space-y-5 py-2">
-          <p className="font-semibold text-lg">{currentQ + 1}. {q.question}</p>
-          <RadioGroup
-            value={answers[currentQ] !== undefined ? String(answers[currentQ]) : ''}
-            onValueChange={v => setAnswers({ ...answers, [currentQ]: parseInt(v) })}
-          >
-            {q.options.map((opt, oIdx) => (
-              <div key={oIdx} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-accent/50 ${
-                answers[currentQ] === oIdx ? 'border-primary bg-primary/5' : ''
-              }`}>
-                <RadioGroupItem value={String(oIdx)} id={`q${currentQ}-o${oIdx}`} />
-                <Label htmlFor={`q${currentQ}-o${oIdx}`} className="flex-1 cursor-pointer">{opt}</Label>
-              </div>
-            ))}
-          </RadioGroup>
+        <div className="relative overflow-hidden min-h-[250px]">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={currentQ}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: 'spring', stiffness: 300, damping: 30, duration: 0.3 }}
+              className="space-y-5 py-2"
+            >
+              <p className="font-semibold text-lg">{currentQ + 1}. {q.question}</p>
+              <RadioGroup
+                value={answers[currentQ] !== undefined ? String(answers[currentQ]) : ''}
+                onValueChange={v => setAnswers({ ...answers, [currentQ]: parseInt(v) })}
+              >
+                {q.options.map((opt, oIdx) => (
+                  <motion.div
+                    key={oIdx}
+                    initial={{ opacity: 0, x: direction >= 0 ? 30 : -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: oIdx * 0.08, duration: 0.25 }}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer hover:bg-accent/50 hover:scale-[1.01] ${
+                      answers[currentQ] === oIdx ? 'border-primary bg-primary/5 shadow-sm' : ''
+                    }`}
+                  >
+                    <RadioGroupItem value={String(oIdx)} id={`q${currentQ}-o${oIdx}`} />
+                    <Label htmlFor={`q${currentQ}-o${oIdx}`} className="flex-1 cursor-pointer">{opt}</Label>
+                  </motion.div>
+                ))}
+              </RadioGroup>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-border/50">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentQ(c => c + 1)}
+            onClick={goNext}
             disabled={currentQ >= total - 1}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 transition-transform active:scale-95"
           >
             التالي
             <ChevronLeft className="w-4 h-4" />
           </Button>
 
           {currentQ === total - 1 && Object.keys(answers).length === total && (
-            <Button variant="hero" size="sm" onClick={submitQuiz}>
-              تسليم الاختبار
-            </Button>
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring' }}>
+              <Button variant="hero" size="sm" onClick={submitQuiz}>
+                تسليم الاختبار
+              </Button>
+            </motion.div>
           )}
 
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentQ(c => c - 1)}
+            onClick={goPrev}
             disabled={currentQ <= 0}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 transition-transform active:scale-95"
           >
             <ChevronRight className="w-4 h-4" />
             السابق
