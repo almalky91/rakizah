@@ -25,7 +25,7 @@ const PublicNameGate = ({ teacherName, pageTitle, studentName, setStudentName, o
           <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
             <GraduationCap className="w-10 h-10 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl mb-1">صفحة {teacherName}</CardTitle>
+          <CardTitle className="text-2xl mb-1">{pageTitle || `صفحة ${teacherName}`}</CardTitle>
           <p className="text-muted-foreground text-sm flex items-center justify-center gap-1">
             <Sparkles className="w-4 h-4" />
             أدخل اسمك للبدء في التعلم
