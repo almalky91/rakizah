@@ -80,59 +80,6 @@ const PerformanceBoard = () => {
 
   const uniqueStudents = [...new Set(publicResults.map(r => r.student_name))];
 
-  const exportPDF = async () => {
-    const element = printRef.current;
-    if (!element) { toast.error('لا يوجد محتوى للتصدير'); return; }
-
-    toast.loading('جاري إنشاء التقرير...');
-
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const imgWidth = 190; // A4 width minus margins
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const pageHeight = 277; // A4 height minus margins
-
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      let heightLeft = imgHeight;
-      let position = 10;
-      let page = 1;
-
-      doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
-        doc.addPage();
-        doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        page++;
-      }
-
-      const blob = doc.output('blob');
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'performance-board.pdf';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-      toast.dismiss();
-      toast.success('تم تصدير التقرير بنجاح');
-    } catch (error) {
-      console.error('PDF export failed:', error);
-      toast.dismiss();
-      toast.error('تعذر تصدير التقرير');
-    }
-  };
 
   return (
     <div className="space-y-6" ref={printRef}>
