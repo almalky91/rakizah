@@ -146,7 +146,7 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
                     initial={{ opacity: 0, x: direction >= 0 ? 30 : -30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: oIdx * 0.08, duration: 0.25 }}
-                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer hover:bg-accent/50 hover:scale-[1.01] ${
+                    className={`flex flex-row-reverse items-center gap-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer hover:bg-accent/50 hover:scale-[1.01] ${
                       answers[currentQ] === oIdx ? 'border-primary bg-primary/5 shadow-sm' : ''
                     }`}
                   >
