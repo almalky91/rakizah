@@ -6,6 +6,7 @@ import { GraduationCap, User, Sparkles } from 'lucide-react';
 
 interface Props {
   teacherName: string;
+  pageTitle?: string | null;
   studentName: string;
   setStudentName: (name: string) => void;
   onConfirm: () => void;
