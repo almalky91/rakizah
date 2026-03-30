@@ -1,5 +1,4 @@
-import { School, BookOpen, Users } from 'lucide-react';
-import logoImg from '@/assets/logo.jpg';
+import { School, BookOpen, Users, GraduationCap } from 'lucide-react';
 
 const TEMPLATE_STYLES: Record<string, { gradient: string; accent: string }> = {
   classic: {
@@ -64,7 +63,9 @@ const PublicBanner = ({ profile, studentName, totalContent }: PublicBannerProps)
 
           {/* Teacher avatar */}
           <div className="flex justify-center mb-4">
-            <img src={logoImg} alt="شعار المنصة" className="w-20 h-20 rounded-2xl shadow-lg border-4 border-white/20 object-cover" />
+            <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg border-4 border-white/20">
+              <GraduationCap className="w-10 h-10 text-white" />
+            </div>
           </div>
 
           {/* Teacher name */}

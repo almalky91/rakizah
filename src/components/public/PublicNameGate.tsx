@@ -2,8 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Sparkles } from 'lucide-react';
-import logoImg from '@/assets/logo.jpg';
+import { User, Sparkles, GraduationCap } from 'lucide-react';
 
 interface Props {
   teacherName: string;
@@ -23,7 +22,9 @@ const PublicNameGate = ({ teacherName, pageTitle, studentName, setStudentName, o
 
       <Card className="w-full max-w-md glass relative z-10 shadow-2xl border-border/30">
         <CardHeader className="text-center pb-2">
-          <img src={logoImg} alt="شعار المنصة" className="w-20 h-20 rounded-2xl object-cover mx-auto mb-4 shadow-lg" />
+          <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <GraduationCap className="w-10 h-10 text-primary" />
+          </div>
           <CardTitle className="text-2xl mb-1">{pageTitle || `صفحة ${teacherName}`}</CardTitle>
           <p className="text-muted-foreground text-sm flex items-center justify-center gap-1">
             <Sparkles className="w-4 h-4" />
