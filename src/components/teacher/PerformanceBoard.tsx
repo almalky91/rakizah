@@ -22,7 +22,7 @@ const PerformanceBoard = () => {
   const [stats, setStats] = useState({ totalViews: 0, publicStudents: 0, avgScore: 0, totalQuizAttempts: 0 });
   const [publicResults, setPublicResults] = useState<PublicResult[]>([]);
 
-  const printRef = useRef<HTMLDivElement>(null);
+  
 
   const fetchData = async () => {
     if (!user) return;
