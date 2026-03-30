@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft, Quote, GraduationCap, ClipboardList, MessageCircle } from 'lucide-react';
+import { BookOpen, Gamepad2, Video, Trophy, Users, ArrowLeft, Quote, GraduationCap, ClipboardList, MessageCircle, Star } from 'lucide-react';
+import logoImg from '@/assets/logo.jpg';
 import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,9 +82,8 @@ const LandingPage = () => {
             <motion.div
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl gradient-primary flex items-center justify-center"
             >
-              <Star className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+              <img src={logoImg} alt="شعار المنصة" className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover" />
             </motion.div>
             <span className="text-base sm:text-xl font-bold text-primary-foreground">منصتي التعليمية</span>
           </div>
@@ -107,7 +107,7 @@ const LandingPage = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-primary/20 text-primary-foreground/80 text-xs sm:text-sm mb-4 sm:mb-6"
             >
-              <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
+              <img src={logoImg} alt="شعار" className="w-4 h-4 rounded-full object-cover" />
               منصة تعليمية متكاملة
             </motion.div>
             <motion.h1
