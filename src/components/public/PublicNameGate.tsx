@@ -12,7 +12,7 @@ interface Props {
   onConfirm: () => void;
 }
 
-const PublicNameGate = ({ teacherName, studentName, setStudentName, onConfirm }: Props) => {
+const PublicNameGate = ({ teacherName, pageTitle, studentName, setStudentName, onConfirm }: Props) => {
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4 relative overflow-hidden">
       <div className="absolute inset-0">
