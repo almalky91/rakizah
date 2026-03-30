@@ -108,7 +108,7 @@ const LandingPage = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-primary/20 text-primary-foreground/80 text-xs sm:text-sm mb-4 sm:mb-6"
             >
-              <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
+              <img src={logoImg} alt="شعار" className="w-4 h-4 rounded-full object-cover" />
               منصة تعليمية متكاملة
             </motion.div>
             <motion.h1
