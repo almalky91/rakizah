@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Star, ShieldCheck, GraduationCap } from 'lucide-react';
+import { ShieldCheck, GraduationCap } from 'lucide-react';
+import logoImg from '@/assets/logo.jpg';
 import { toast } from 'sonner';
 
 const tabs = [
