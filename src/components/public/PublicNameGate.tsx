@@ -6,12 +6,13 @@ import { GraduationCap, User, Sparkles } from 'lucide-react';
 
 interface Props {
   teacherName: string;
+  pageTitle?: string | null;
   studentName: string;
   setStudentName: (name: string) => void;
   onConfirm: () => void;
 }
 
-const PublicNameGate = ({ teacherName, studentName, setStudentName, onConfirm }: Props) => {
+const PublicNameGate = ({ teacherName, pageTitle, studentName, setStudentName, onConfirm }: Props) => {
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4 relative overflow-hidden">
       <div className="absolute inset-0">
@@ -24,7 +25,7 @@ const PublicNameGate = ({ teacherName, studentName, setStudentName, onConfirm }:
           <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
             <GraduationCap className="w-10 h-10 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl mb-1">صفحة {teacherName}</CardTitle>
+          <CardTitle className="text-2xl mb-1">{pageTitle || `صفحة ${teacherName}`}</CardTitle>
           <p className="text-muted-foreground text-sm flex items-center justify-center gap-1">
             <Sparkles className="w-4 h-4" />
             أدخل اسمك للبدء في التعلم

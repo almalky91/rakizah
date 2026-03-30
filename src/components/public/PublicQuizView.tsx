@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle, XCircle, Trophy } from 'lucide-react';
+import { CheckCircle, XCircle, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import type { Quiz } from '@/pages/teacher/TeacherPublicPage';
 
 interface Props {
@@ -19,9 +20,14 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
+  const [currentQ, setCurrentQ] = useState(0);
+
+  const total = quiz.questions.length;
+  const q = quiz.questions[currentQ];
+  const progress = ((currentQ + 1) / total) * 100;
+  const percentage = Math.round((score / total) * 100);
 
   const submitQuiz = async () => {
-    const total = quiz.questions.length;
     if (Object.keys(answers).length < total) {
       toast.error('يرجى الإجابة على جميع الأسئلة');
       return;
@@ -35,70 +41,93 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
     await onSaveResult(quiz.id, correct, total, answers);
   };
 
-  const percentage = Math.round((score / quiz.questions.length) * 100);
-
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="gradient-primary py-4 px-6">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-bold text-primary-foreground">{quiz.title}</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-primary-foreground/70 text-sm">{studentName}</span>
-            <Button variant="ghost" size="sm" className="text-primary-foreground/70" onClick={onBack}>رجوع</Button>
-          </div>
-        </div>
-      </header>
-      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        {quiz.questions.map((q, qIdx) => (
-          <Card key={qIdx} className={`transition-all ${submitted ? (answers[qIdx] === q.correct ? 'border-green-500/50 shadow-green-500/10 shadow-lg' : 'border-destructive/50') : 'hover:shadow-md'}`}>
-            <CardContent className="p-6 space-y-4">
-              <p className="font-semibold text-lg">{qIdx + 1}. {q.question}</p>
-              <RadioGroup
-                value={answers[qIdx] !== undefined ? String(answers[qIdx]) : ''}
-                onValueChange={v => !submitted && setAnswers({ ...answers, [qIdx]: parseInt(v) })}
-                disabled={submitted}
-              >
-                {q.options.map((opt, oIdx) => (
-                  <div key={oIdx} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                    submitted && oIdx === q.correct ? 'bg-green-50 border-green-500 dark:bg-green-950' :
-                    submitted && answers[qIdx] === oIdx && oIdx !== q.correct ? 'bg-red-50 border-destructive dark:bg-red-950' : ''
-                  }`}>
-                    <RadioGroupItem value={String(oIdx)} id={`q${qIdx}-o${oIdx}`} />
-                    <Label htmlFor={`q${qIdx}-o${oIdx}`} className="flex-1 cursor-pointer">{opt}</Label>
-                    {submitted && oIdx === q.correct && <CheckCircle className="w-5 h-5 text-green-600" />}
-                    {submitted && answers[qIdx] === oIdx && oIdx !== q.correct && <XCircle className="w-5 h-5 text-destructive" />}
-                  </div>
-                ))}
-              </RadioGroup>
-            </CardContent>
-          </Card>
-        ))}
-
-        {!submitted ? (
-          <Button variant="hero" className="w-full h-12 text-base" onClick={submitQuiz}>تسليم الاختبار</Button>
-        ) : (
-          <Card className="gradient-primary text-primary-foreground overflow-hidden">
-            <CardContent className="p-8 text-center relative">
+  if (submitted) {
+    return (
+      <Dialog open onOpenChange={() => onBack()}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <div className="gradient-primary text-primary-foreground rounded-xl overflow-hidden -m-6">
+            <div className="p-8 text-center relative">
               <div className="absolute inset-0 overflow-hidden">
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary-foreground/5 rounded-full" />
                 <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-primary-foreground/5 rounded-full" />
               </div>
               <div className="relative z-10">
-                <Trophy className="w-12 h-12 mx-auto mb-3 text-accent" />
-                <p className="text-4xl font-bold mb-1">{score} / {quiz.questions.length}</p>
-                <p className="text-primary-foreground/60 text-sm mb-1">{percentage}%</p>
-                <p className="text-primary-foreground/80 mb-4">
+                <Trophy className="w-14 h-14 mx-auto mb-4 text-accent" />
+                <p className="text-5xl font-bold mb-2">{score} / {total}</p>
+                <p className="text-primary-foreground/60 text-lg mb-2">{percentage}%</p>
+                <p className="text-primary-foreground/80 text-lg mb-6">
                   {percentage >= 80 ? '🎉 أحسنت يا ' : percentage >= 50 ? '👍 جيد يا ' : '💪 حاول مرة أخرى يا '}{studentName}
                 </p>
                 <Button variant="ghost" className="text-primary-foreground border border-primary-foreground/30" onClick={onBack}>
                   العودة للقائمة
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </main>
-    </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open onOpenChange={() => onBack()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
+        <DialogHeader className="space-y-3">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-lg">{quiz.title}</DialogTitle>
+            <span className="text-sm text-muted-foreground">{currentQ + 1} / {total}</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </DialogHeader>
+
+        <div className="space-y-5 py-2">
+          <p className="font-semibold text-lg">{currentQ + 1}. {q.question}</p>
+          <RadioGroup
+            value={answers[currentQ] !== undefined ? String(answers[currentQ]) : ''}
+            onValueChange={v => setAnswers({ ...answers, [currentQ]: parseInt(v) })}
+          >
+            {q.options.map((opt, oIdx) => (
+              <div key={oIdx} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-accent/50 ${
+                answers[currentQ] === oIdx ? 'border-primary bg-primary/5' : ''
+              }`}>
+                <RadioGroupItem value={String(oIdx)} id={`q${currentQ}-o${oIdx}`} />
+                <Label htmlFor={`q${currentQ}-o${oIdx}`} className="flex-1 cursor-pointer">{opt}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-border/50">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentQ(c => c + 1)}
+            disabled={currentQ >= total - 1}
+            className="flex items-center gap-1"
+          >
+            التالي
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+
+          {currentQ === total - 1 && Object.keys(answers).length === total && (
+            <Button variant="hero" size="sm" onClick={submitQuiz}>
+              تسليم الاختبار
+            </Button>
+          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentQ(c => c - 1)}
+            disabled={currentQ <= 0}
+            className="flex items-center gap-1"
+          >
+            <ChevronRight className="w-4 h-4" />
+            السابق
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

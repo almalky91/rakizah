@@ -122,7 +122,7 @@ const TeacherPublicPage = () => {
   }
 
   if (!nameConfirmed) {
-    return <PublicNameGate teacherName={profile.full_name || 'معلم'} studentName={studentName} setStudentName={setStudentName} onConfirm={() => { if (studentName.trim()) setNameConfirmed(true); else toast.error('يرجى إدخال اسمك'); }} />;
+    return <PublicNameGate teacherName={profile.full_name || 'معلم'} pageTitle={profile.page_title} studentName={studentName} setStudentName={setStudentName} onConfirm={() => { if (studentName.trim()) setNameConfirmed(true); else toast.error('يرجى إدخال اسمك'); }} />;
   }
 
   if (activeQuiz) {
