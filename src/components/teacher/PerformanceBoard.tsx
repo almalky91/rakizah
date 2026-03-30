@@ -82,16 +82,12 @@ const PerformanceBoard = () => {
 
 
   return (
-    <div className="space-y-6" ref={printRef}>
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-primary" />
           لوحة الأداء
         </h2>
-        <Button onClick={exportPDF} variant="outline" className="gap-2">
-          <Download className="w-4 h-4" />
-          تصدير PDF
-        </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
