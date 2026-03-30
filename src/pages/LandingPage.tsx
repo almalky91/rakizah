@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Gamepad2, Video, Trophy, Users, Star, ArrowLeft, Quote, GraduationCap, ClipboardList, MessageCircle } from 'lucide-react';
+import { BookOpen, Gamepad2, Video, Trophy, Users, ArrowLeft, Quote, GraduationCap, ClipboardList, MessageCircle, Star } from 'lucide-react';
+import logoImg from '@/assets/logo.jpg';
 import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
