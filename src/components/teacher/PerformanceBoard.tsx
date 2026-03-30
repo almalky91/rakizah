@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart3, Eye, Trophy, Users, FileText, Star, Trash2, Download } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import { BarChart3, Eye, Trophy, Users, FileText, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -24,7 +22,7 @@ const PerformanceBoard = () => {
   const [stats, setStats] = useState({ totalViews: 0, publicStudents: 0, avgScore: 0, totalQuizAttempts: 0 });
   const [publicResults, setPublicResults] = useState<PublicResult[]>([]);
 
-  const printRef = useRef<HTMLDivElement>(null);
+  
 
   const fetchData = async () => {
     if (!user) return;
@@ -82,71 +80,14 @@ const PerformanceBoard = () => {
 
   const uniqueStudents = [...new Set(publicResults.map(r => r.student_name))];
 
-  const exportPDF = async () => {
-    const element = printRef.current;
-    if (!element) { toast.error('لا يوجد محتوى للتصدير'); return; }
-
-    toast.loading('جاري إنشاء التقرير...');
-
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const imgWidth = 190; // A4 width minus margins
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const pageHeight = 277; // A4 height minus margins
-
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      let heightLeft = imgHeight;
-      let position = 10;
-      let page = 1;
-
-      doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
-        doc.addPage();
-        doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        page++;
-      }
-
-      const blob = doc.output('blob');
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'performance-board.pdf';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-      toast.dismiss();
-      toast.success('تم تصدير التقرير بنجاح');
-    } catch (error) {
-      console.error('PDF export failed:', error);
-      toast.dismiss();
-      toast.error('تعذر تصدير التقرير');
-    }
-  };
 
   return (
-    <div className="space-y-6" ref={printRef}>
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-primary" />
           لوحة الأداء
         </h2>
-        <Button onClick={exportPDF} variant="outline" className="gap-2">
-          <Download className="w-4 h-4" />
-          تصدير PDF
-        </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
