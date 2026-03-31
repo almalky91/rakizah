@@ -81,6 +81,8 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const publicBaseUrl = `${window.location.origin}/p/`;
+  const currentPublicLink = publicSlug ? `${publicBaseUrl}${publicSlug}` : '';
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -198,20 +200,27 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="publicSlug">رابط الصفحة العامة</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground whitespace-nowrap" dir="ltr">
-                {window.location.origin}/p/
-              </span>
+            <div className="space-y-3">
+              <div className="rounded-xl border border-border bg-muted/30 px-3 py-2" dir="ltr">
+                <p className="mb-1 text-xs text-muted-foreground">الرابط الأساسي</p>
+                <p className="break-all text-sm">{publicBaseUrl}</p>
+              </div>
               <Input
                 id="publicSlug"
                 placeholder="رابط مخصص"
                 value={publicSlug}
                 onChange={(e) => setPublicSlug(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
                 dir="ltr"
-                className="font-mono"
+                className="font-mono text-left"
               />
+              {currentPublicLink && (
+                <div className="rounded-xl border border-border bg-card px-3 py-2" dir="ltr">
+                  <p className="mb-1 text-xs text-muted-foreground">الرابط الحالي</p>
+                  <p className="break-all text-sm font-mono">{currentPublicLink}</p>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">يمكنك تخصيص الرابط باستخدام أحرف إنجليزية وأرقام فقط</p>
+            <p className="text-xs text-muted-foreground">يمكنك تخصيص الرابط باستخدام أحرف إنجليزية وأرقام فقط، وإذا تركته فارغًا سيتم توليده تلقائيًا</p>
           </div>
         </CardContent>
       </Card>
