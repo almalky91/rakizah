@@ -120,10 +120,14 @@ const QuizCenter = () => {
           <BookOpen className="w-6 h-6 text-primary" />
           مركز الاختبارات
         </h2>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إنشاء اختبار</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setBankOpen(true)}>
+            <Library className="w-4 h-4 ml-1" />مكتبة النماذج
+          </Button>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إنشاء اختبار</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editingId ? 'تعديل الاختبار' : 'إنشاء اختبار جديد'}</DialogTitle></DialogHeader>
             <form onSubmit={saveQuiz} className="space-y-6">
