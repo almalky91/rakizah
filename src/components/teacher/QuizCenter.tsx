@@ -29,6 +29,7 @@ const QuizCenter = () => {
   const { user } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [open, setOpen] = useState(false);
+  const [bankOpen, setBankOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([
