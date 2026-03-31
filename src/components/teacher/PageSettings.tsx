@@ -66,7 +66,11 @@ const TEMPLATES = [
   },
 ];
 
-const PageSettings = () => {
+type PageSettingsProps = {
+  onPublicSlugChange?: (slug: string | null) => void;
+};
+
+const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const { user } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -127,7 +131,7 @@ const PageSettings = () => {
       }
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .update({
         full_name: fullName || null,
@@ -138,11 +142,16 @@ const PageSettings = () => {
         bio: bio || null,
         page_template: selectedTemplate,
       } as any)
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .select('public_slug')
+      .single();
     
     if (error) {
       toast.error('حدث خطأ أثناء الحفظ');
     } else {
+      const savedSlug = (data as any)?.public_slug || null;
+      setPublicSlug(savedSlug || '');
+      onPublicSlugChange?.(savedSlug);
       toast.success('تم حفظ الإعدادات بنجاح');
     }
     setSaving(false);
