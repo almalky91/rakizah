@@ -81,8 +81,8 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const publicBaseUrl = `${window.location.origin}/p/`;
-  const currentPublicLink = publicSlug ? `${publicBaseUrl}${publicSlug}` : '';
+  const siteUrl = window.location.origin;
+  const currentPublicLink = publicSlug ? `${siteUrl}/p/${publicSlug}` : '';
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -202,21 +202,24 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
             <Label htmlFor="publicSlug">رابط الصفحة العامة</Label>
             <div className="space-y-3">
               <div className="rounded-xl border border-border bg-muted/30 px-3 py-2" dir="ltr">
-                <p className="mb-1 text-xs text-muted-foreground">الرابط الأساسي</p>
-                <p className="break-all text-sm">{publicBaseUrl}</p>
+                <p className="mb-1 text-xs text-muted-foreground">رابط الموقع</p>
+                <p className="break-all text-sm font-mono">{siteUrl}</p>
               </div>
-              <Input
-                id="publicSlug"
-                placeholder="رابط مخصص"
-                value={publicSlug}
-                onChange={(e) => setPublicSlug(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
-                dir="ltr"
-                className="font-mono text-left"
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground font-mono text-sm shrink-0" dir="ltr">/p/</span>
+                <Input
+                  id="publicSlug"
+                  placeholder="رابط مخصص"
+                  value={publicSlug}
+                  onChange={(e) => setPublicSlug(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
+                  dir="ltr"
+                  className="font-mono text-left"
+                />
+              </div>
               {currentPublicLink && (
-                <div className="rounded-xl border border-border bg-card px-3 py-2" dir="ltr">
-                  <p className="mb-1 text-xs text-muted-foreground">الرابط الحالي</p>
-                  <p className="break-all text-sm font-mono">{currentPublicLink}</p>
+                <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2" dir="ltr">
+                  <p className="mb-1 text-xs text-muted-foreground">الرابط الكامل</p>
+                  <p className="break-all text-sm font-mono text-primary">{currentPublicLink}</p>
                 </div>
               )}
             </div>
