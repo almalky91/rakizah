@@ -27,6 +27,11 @@ const TeacherDashboard = () => {
   const publicLink = publicSlug ? `${window.location.origin}/p/${publicSlug}` : '';
 
   const copyLink = () => {
+    if (!publicLink) {
+      toast.error('احفظ إعدادات الصفحة أولاً لتفعيل الرابط');
+      return;
+    }
+
     navigator.clipboard.writeText(publicLink);
     setCopied(true);
     toast.success('تم نسخ الرابط');
@@ -48,7 +53,7 @@ const TeacherDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={copyLink} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 gap-1">
+            <Button variant="ghost" onClick={copyLink} disabled={!publicLink} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 gap-1 disabled:opacity-50 disabled:hover:bg-transparent">
               {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
               <span className="hidden sm:inline">{copied ? 'تم النسخ' : 'رابط الصفحة'}</span>
             </Button>
@@ -89,7 +94,7 @@ const TeacherDashboard = () => {
           <TabsContent value="quizzes"><QuizCenter /></TabsContent>
           <TabsContent value="games"><GameCenter /></TabsContent>
           <TabsContent value="performance"><PerformanceBoard /></TabsContent>
-          <TabsContent value="settings"><PageSettings /></TabsContent>
+          <TabsContent value="settings"><PageSettings onPublicSlugChange={setPublicSlug} /></TabsContent>
         </Tabs>
       </main>
     </div>
