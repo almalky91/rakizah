@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, BookOpen, X, Pencil } from 'lucide-react';
+import { Plus, Trash2, BookOpen, X, Pencil, Library } from 'lucide-react';
 import { toast } from 'sonner';
+import QuestionBank from './QuestionBank';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -28,6 +29,7 @@ const QuizCenter = () => {
   const { user } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [open, setOpen] = useState(false);
+  const [bankOpen, setBankOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([
@@ -118,10 +120,14 @@ const QuizCenter = () => {
           <BookOpen className="w-6 h-6 text-primary" />
           مركز الاختبارات
         </h2>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إنشاء اختبار</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setBankOpen(true)}>
+            <Library className="w-4 h-4 ml-1" />مكتبة النماذج
+          </Button>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إنشاء اختبار</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editingId ? 'تعديل الاختبار' : 'إنشاء اختبار جديد'}</DialogTitle></DialogHeader>
             <form onSubmit={saveQuiz} className="space-y-6">
@@ -164,7 +170,10 @@ const QuizCenter = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      <QuestionBank open={bankOpen} onOpenChange={setBankOpen} onImported={fetchQuizzes} />
 
       {quizzes.length === 0 ? (
         <Card>
