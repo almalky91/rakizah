@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { questionBankData, BankCategory, BankModel } from '@/data/questionBank';
@@ -18,7 +18,7 @@ interface QuestionBankProps {
 
 type View = 'categories' | 'subcategories' | 'models' | 'preview';
 
-const QuestionBank = ({ open, onOpenChange, onImported }: QuestionBankProps) => {
+const QuestionBank = forwardRef<HTMLDivElement, QuestionBankProps>(({ open, onOpenChange, onImported }, _ref) => {
   const { user } = useAuth();
   const [view, setView] = useState<View>('categories');
   const [selectedCategory, setSelectedCategory] = useState<BankCategory | null>(null);
@@ -275,6 +275,8 @@ const QuestionBank = ({ open, onOpenChange, onImported }: QuestionBankProps) => 
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+QuestionBank.displayName = 'QuestionBank';
 
 export default QuestionBank;
