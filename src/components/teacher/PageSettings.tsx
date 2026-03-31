@@ -81,7 +81,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const siteUrl = window.location.origin;
+  const siteUrl = 'https://rakizah.lovable.app';
   const currentPublicLink = publicSlug ? `${siteUrl}/p/${publicSlug}` : '';
 
   useEffect(() => {
