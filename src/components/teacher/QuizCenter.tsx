@@ -170,7 +170,10 @@ const QuizCenter = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      <QuestionBank open={bankOpen} onOpenChange={setBankOpen} onImported={fetchQuizzes} />
 
       {quizzes.length === 0 ? (
         <Card>
