@@ -115,12 +115,12 @@ const QuizCenter = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <BookOpen className="w-6 h-6 text-primary" />
           مركز الاختبارات
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Button variant="outline" size="sm" onClick={() => setBankOpen(true)}>
             <Library className="w-4 h-4 ml-1" />مكتبة النماذج
           </Button>
