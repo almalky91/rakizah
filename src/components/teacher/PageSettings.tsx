@@ -385,6 +385,44 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
         </CardContent>
       </Card>
 
+      {/* تغيير كلمة المرور */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-primary" />
+            تغيير كلمة المرور
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
+            <Input
+              id="newPassword"
+              type="password"
+              placeholder="أدخل كلمة المرور الجديدة"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              dir="ltr"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">تأكيد كلمة المرور الجديدة</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="أعد إدخال كلمة المرور الجديدة"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              dir="ltr"
+            />
+          </div>
+          <Button onClick={handleChangePassword} disabled={savingPassword || !newPassword || !confirmPassword} variant="outline" className="gap-2">
+            <Lock className="w-4 h-4" />
+            {savingPassword ? 'جارٍ التغيير...' : 'تغيير كلمة المرور'}
+          </Button>
+        </CardContent>
+      </Card>
+
       <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto gap-2">
         <Save className="w-4 h-4" />
         {saving ? 'جارٍ الحفظ...' : 'حفظ الإعدادات'}
