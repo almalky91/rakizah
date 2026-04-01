@@ -237,14 +237,24 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">البريد الإلكتروني</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="example@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              dir="ltr"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="email"
+                type="email"
+                placeholder="example@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                dir="ltr"
+                className="flex-1"
+              />
+              {email !== originalEmail && email && (
+                <Button onClick={handleChangeEmail} disabled={savingEmail} size="sm" variant="outline" className="shrink-0 gap-1">
+                  <Mail className="w-3 h-3" />
+                  {savingEmail ? 'جارٍ...' : 'تحديث'}
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">عند تغيير البريد سيتم إرسال رابط تأكيد للبريد الجديد</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="publicSlug">رابط الصفحة العامة</Label>
