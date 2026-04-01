@@ -113,6 +113,47 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
     fetchProfile();
   }, [user]);
 
+  const handleChangeEmail = async () => {
+    if (!user || !email || email === originalEmail) return;
+    setSavingEmail(true);
+    const { error } = await supabase.auth.updateUser({ email });
+    if (error) {
+      toast.error('حدث خطأ أثناء تغيير البريد الإلكتروني');
+    } else {
+      // Update profile table too
+      await supabase.from('profiles').update({ email } as any).eq('id', user.id);
+      setOriginalEmail(email);
+      toast.success('تم إرسال رابط تأكيد إلى بريدك الإلكتروني الجديد');
+    }
+    setSavingEmail(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error('يرجى ملء جميع الحقول');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('كلمة المرور الجديدة غير متطابقة');
+      return;
+    }
+    setSavingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast.error('حدث خطأ أثناء تغيير كلمة المرور');
+    } else {
+      toast.success('تم تغيير كلمة المرور بنجاح');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+    setSavingPassword(false);
+  };
+
   const handleSave = async () => {
     if (!user) return;
     
