@@ -101,6 +101,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
       if (data) {
         setFullName(data.full_name || '');
         setEmail(data.email || '');
+        setOriginalEmail(data.email || '');
         setPublicSlug(data.public_slug || '');
         setPageTitle(data.page_title || '');
         setSchoolName((data as any).school_name || '');
