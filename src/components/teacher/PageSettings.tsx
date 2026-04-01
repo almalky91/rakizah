@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Eye, Check, User, Link2 } from 'lucide-react';
+import { Save, Palette, Eye, Check, User, Link2, Lock, Mail } from 'lucide-react';
 
 const TEMPLATES = [
   {
