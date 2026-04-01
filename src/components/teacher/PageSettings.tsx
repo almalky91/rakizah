@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Eye, Check, User, Link2 } from 'lucide-react';
+import { Save, Palette, Eye, Check, User, Link2, Lock, Mail } from 'lucide-react';
 
 const TEMPLATES = [
   {
@@ -81,6 +81,12 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [originalEmail, setOriginalEmail] = useState('');
   const siteUrl = 'https://rakizah.lovable.app';
   const currentPublicLink = publicSlug ? `${siteUrl}/p/${publicSlug}` : '';
 
@@ -95,6 +101,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
       if (data) {
         setFullName(data.full_name || '');
         setEmail(data.email || '');
+        setOriginalEmail(data.email || '');
         setPublicSlug(data.public_slug || '');
         setPageTitle(data.page_title || '');
         setSchoolName((data as any).school_name || '');
@@ -105,6 +112,47 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
     };
     fetchProfile();
   }, [user]);
+
+  const handleChangeEmail = async () => {
+    if (!user || !email || email === originalEmail) return;
+    setSavingEmail(true);
+    const { error } = await supabase.auth.updateUser({ email });
+    if (error) {
+      toast.error('حدث خطأ أثناء تغيير البريد الإلكتروني');
+    } else {
+      // Update profile table too
+      await supabase.from('profiles').update({ email } as any).eq('id', user.id);
+      setOriginalEmail(email);
+      toast.success('تم إرسال رابط تأكيد إلى بريدك الإلكتروني الجديد');
+    }
+    setSavingEmail(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error('يرجى ملء جميع الحقول');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('كلمة المرور الجديدة غير متطابقة');
+      return;
+    }
+    setSavingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast.error('حدث خطأ أثناء تغيير كلمة المرور');
+    } else {
+      toast.success('تم تغيير كلمة المرور بنجاح');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+    setSavingPassword(false);
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -189,14 +237,24 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">البريد الإلكتروني</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="example@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              dir="ltr"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="email"
+                type="email"
+                placeholder="example@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                dir="ltr"
+                className="flex-1"
+              />
+              {email !== originalEmail && email && (
+                <Button onClick={handleChangeEmail} disabled={savingEmail} size="sm" variant="outline" className="shrink-0 gap-1">
+                  <Mail className="w-3 h-3" />
+                  {savingEmail ? 'جارٍ...' : 'تحديث'}
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">عند تغيير البريد سيتم إرسال رابط تأكيد للبريد الجديد</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="publicSlug">رابط الصفحة العامة</Label>
@@ -324,6 +382,44 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
               </button>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* تغيير كلمة المرور */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-primary" />
+            تغيير كلمة المرور
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
+            <Input
+              id="newPassword"
+              type="password"
+              placeholder="أدخل كلمة المرور الجديدة"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              dir="ltr"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">تأكيد كلمة المرور الجديدة</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="أعد إدخال كلمة المرور الجديدة"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              dir="ltr"
+            />
+          </div>
+          <Button onClick={handleChangePassword} disabled={savingPassword || !newPassword || !confirmPassword} variant="outline" className="gap-2">
+            <Lock className="w-4 h-4" />
+            {savingPassword ? 'جارٍ التغيير...' : 'تغيير كلمة المرور'}
+          </Button>
         </CardContent>
       </Card>
 
