@@ -81,6 +81,12 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [originalEmail, setOriginalEmail] = useState('');
   const siteUrl = 'https://rakizah.lovable.app';
   const currentPublicLink = publicSlug ? `${siteUrl}/p/${publicSlug}` : '';
 
