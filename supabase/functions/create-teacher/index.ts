@@ -61,10 +61,12 @@ serve(async (req) => {
       .update({ role: "teacher" })
       .eq("user_id", newUser.user.id);
 
-    // Admin-created teachers get activated subscription
+    // Admin-created teachers get activated subscription for 1 year
+    const oneYearLater = new Date();
+    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
     await supabaseAdmin
       .from("profiles")
-      .update({ subscription_active: true })
+      .update({ subscription_active: true, subscription_ends_at: oneYearLater.toISOString() })
       .eq("id", newUser.user.id);
 
     return new Response(JSON.stringify({ user: newUser.user }), {

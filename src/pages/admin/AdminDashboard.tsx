@@ -19,6 +19,7 @@ interface Teacher {
   school_name: string | null;
   trial_ends_at: string | null;
   subscription_active: boolean;
+  subscription_ends_at: string | null;
 }
 
 interface TeacherStats {
@@ -47,7 +48,7 @@ const AdminDashboard = () => {
 
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, full_name, created_at, public_slug, school_name, trial_ends_at, subscription_active')
+      .select('id, email, full_name, created_at, public_slug, school_name, trial_ends_at, subscription_active, subscription_ends_at')
       .in('id', teacherIds);
     setTeachers((data as any) || []);
 
@@ -124,6 +125,13 @@ const AdminDashboard = () => {
   };
 
   const getSubscriptionStatus = (t: Teacher) => {
+    if (t.subscription_active && t.subscription_ends_at) {
+      const endsAt = new Date(t.subscription_ends_at);
+      const days = Math.max(0, Math.ceil((endsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+      if (days > 30) return { label: `مفعّل (${days} يوم)`, color: 'text-emerald-500' };
+      if (days > 0) return { label: `ينتهي خلال ${days} يوم`, color: 'text-amber-500' };
+      return { label: 'منتهي', color: 'text-destructive' };
+    }
     if (t.subscription_active) return { label: 'مفعّل', color: 'text-emerald-500' };
     const trialEnd = t.trial_ends_at ? new Date(t.trial_ends_at) : null;
     if (trialEnd && new Date() < trialEnd) return { label: 'تجريبي', color: 'text-amber-500' };

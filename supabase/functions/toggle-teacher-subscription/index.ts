@@ -44,9 +44,19 @@ serve(async (req) => {
 
     const { teacherId, active } = await req.json();
 
+    // When activating: set subscription_ends_at to 1 year from now
+    // When deactivating: clear subscription_ends_at
+    const now = new Date();
+    const oneYearLater = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+
+    const updateData: Record<string, any> = {
+      subscription_active: active,
+      subscription_ends_at: active ? oneYearLater.toISOString() : null,
+    };
+
     const { error } = await supabaseAdmin
       .from("profiles")
-      .update({ subscription_active: active })
+      .update(updateData)
       .eq("id", teacherId);
 
     if (error) throw error;

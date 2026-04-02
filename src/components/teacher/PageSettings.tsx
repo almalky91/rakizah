@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Eye, Check, User, Link2, Lock, Mail } from 'lucide-react';
+import { Save, Palette, Eye, Check, User, Link2, Lock, Mail, CalendarDays } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 const TEMPLATES = [
   {
@@ -87,6 +88,8 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
   const [originalEmail, setOriginalEmail] = useState('');
+  const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<Date | null>(null);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
   const siteUrl = 'https://rakizah.lovable.app';
   const currentPublicLink = publicSlug ? `${siteUrl}/p/${publicSlug}` : '';
 
@@ -95,7 +98,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, email, public_slug, page_title, school_name, bio, page_template')
+        .select('full_name, email, public_slug, page_title, school_name, bio, page_template, subscription_active, subscription_ends_at')
         .eq('id', user.id)
         .single();
       if (data) {
@@ -107,6 +110,8 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
         setSchoolName((data as any).school_name || '');
         setBio((data as any).bio || '');
         setSelectedTemplate((data as any).page_template || 'classic');
+        setSubscriptionActive((data as any).subscription_active || false);
+        setSubscriptionEndsAt((data as any).subscription_ends_at ? new Date((data as any).subscription_ends_at) : null);
       }
       setLoading(false);
     };
@@ -215,8 +220,65 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
     );
   }
 
+  // Calculate subscription info
+  const now = new Date();
+  const daysRemaining = subscriptionEndsAt
+    ? Math.max(0, Math.ceil((subscriptionEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const totalDays = 365;
+  const progressPercent = subscriptionEndsAt ? Math.min(100, (daysRemaining / totalDays) * 100) : 0;
+
   return (
     <div className="space-y-8">
+      {/* حالة الاشتراك */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-primary" />
+            حالة الاشتراك
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {subscriptionActive && subscriptionEndsAt ? (
+            <>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">حالة الاشتراك</span>
+                <span className={`font-semibold ${daysRemaining > 30 ? 'text-emerald-500' : daysRemaining > 7 ? 'text-amber-500' : 'text-destructive'}`}>
+                  {daysRemaining > 0 ? 'مفعّل' : 'منتهي'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">تاريخ انتهاء الاشتراك</span>
+                <span className="font-medium">{subscriptionEndsAt.toLocaleDateString('ar-SA')}</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">المتبقي</span>
+                  <span className={`font-bold text-lg ${daysRemaining > 30 ? 'text-emerald-500' : daysRemaining > 7 ? 'text-amber-500' : 'text-destructive'}`}>
+                    {daysRemaining} يوم
+                  </span>
+                </div>
+                <Progress value={progressPercent} className="h-3" />
+                <p className="text-xs text-muted-foreground text-center">
+                  {daysRemaining > 30
+                    ? 'اشتراكك ساري المفعول'
+                    : daysRemaining > 7
+                    ? 'اشتراكك على وشك الانتهاء'
+                    : daysRemaining > 0
+                    ? 'اشتراكك ينتهي قريباً جداً!'
+                    : 'انتهى اشتراكك، تواصل مع الإدارة للتجديد'}
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-4 space-y-2">
+              <p className="text-muted-foreground text-sm">لا يوجد اشتراك سنوي مفعّل</p>
+              <p className="text-xs text-muted-foreground">تواصل مع مدير النظام لتفعيل اشتراكك السنوي</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* معلومات المعلم */}
       <Card>
         <CardHeader>
