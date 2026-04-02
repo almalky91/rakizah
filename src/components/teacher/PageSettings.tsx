@@ -98,7 +98,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, email, public_slug, page_title, school_name, bio, page_template')
+        .select('full_name, email, public_slug, page_title, school_name, bio, page_template, subscription_active, subscription_ends_at')
         .eq('id', user.id)
         .single();
       if (data) {
