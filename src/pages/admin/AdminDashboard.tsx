@@ -48,7 +48,7 @@ const AdminDashboard = () => {
 
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, full_name, created_at, public_slug, school_name, trial_ends_at, subscription_active')
+      .select('id, email, full_name, created_at, public_slug, school_name, trial_ends_at, subscription_active, subscription_ends_at')
       .in('id', teacherIds);
     setTeachers((data as any) || []);
 

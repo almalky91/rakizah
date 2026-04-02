@@ -220,8 +220,65 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
     );
   }
 
+  // Calculate subscription info
+  const now = new Date();
+  const daysRemaining = subscriptionEndsAt
+    ? Math.max(0, Math.ceil((subscriptionEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const totalDays = 365;
+  const progressPercent = subscriptionEndsAt ? Math.min(100, (daysRemaining / totalDays) * 100) : 0;
+
   return (
     <div className="space-y-8">
+      {/* حالة الاشتراك */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-primary" />
+            حالة الاشتراك
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {subscriptionActive && subscriptionEndsAt ? (
+            <>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">حالة الاشتراك</span>
+                <span className={`font-semibold ${daysRemaining > 30 ? 'text-emerald-500' : daysRemaining > 7 ? 'text-amber-500' : 'text-destructive'}`}>
+                  {daysRemaining > 0 ? 'مفعّل' : 'منتهي'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">تاريخ انتهاء الاشتراك</span>
+                <span className="font-medium">{subscriptionEndsAt.toLocaleDateString('ar-SA')}</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">المتبقي</span>
+                  <span className={`font-bold text-lg ${daysRemaining > 30 ? 'text-emerald-500' : daysRemaining > 7 ? 'text-amber-500' : 'text-destructive'}`}>
+                    {daysRemaining} يوم
+                  </span>
+                </div>
+                <Progress value={progressPercent} className="h-3" />
+                <p className="text-xs text-muted-foreground text-center">
+                  {daysRemaining > 30
+                    ? 'اشتراكك ساري المفعول'
+                    : daysRemaining > 7
+                    ? 'اشتراكك على وشك الانتهاء'
+                    : daysRemaining > 0
+                    ? 'اشتراكك ينتهي قريباً جداً!'
+                    : 'انتهى اشتراكك، تواصل مع الإدارة للتجديد'}
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-4 space-y-2">
+              <p className="text-muted-foreground text-sm">لا يوجد اشتراك سنوي مفعّل</p>
+              <p className="text-xs text-muted-foreground">تواصل مع مدير النظام لتفعيل اشتراكك السنوي</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* معلومات المعلم */}
       <Card>
         <CardHeader>
