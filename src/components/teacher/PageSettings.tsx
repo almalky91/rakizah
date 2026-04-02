@@ -88,6 +88,8 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
   const [originalEmail, setOriginalEmail] = useState('');
+  const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<Date | null>(null);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
   const siteUrl = 'https://rakizah.lovable.app';
   const currentPublicLink = publicSlug ? `${siteUrl}/p/${publicSlug}` : '';
 
