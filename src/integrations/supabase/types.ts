@@ -80,6 +80,7 @@ export type Database = {
           public_slug: string | null
           school_name: string | null
           subscription_active: boolean
+          subscription_ends_at: string | null
           trial_ends_at: string | null
           updated_at: string
         }
@@ -94,6 +95,7 @@ export type Database = {
           public_slug?: string | null
           school_name?: string | null
           subscription_active?: boolean
+          subscription_ends_at?: string | null
           trial_ends_at?: string | null
           updated_at?: string
         }
@@ -108,6 +110,7 @@ export type Database = {
           public_slug?: string | null
           school_name?: string | null
           subscription_active?: boolean
+          subscription_ends_at?: string | null
           trial_ends_at?: string | null
           updated_at?: string
         }
