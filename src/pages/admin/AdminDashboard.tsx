@@ -19,6 +19,7 @@ interface Teacher {
   school_name: string | null;
   trial_ends_at: string | null;
   subscription_active: boolean;
+  subscription_ends_at: string | null;
 }
 
 interface TeacherStats {
