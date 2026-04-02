@@ -125,6 +125,13 @@ const AdminDashboard = () => {
   };
 
   const getSubscriptionStatus = (t: Teacher) => {
+    if (t.subscription_active && t.subscription_ends_at) {
+      const endsAt = new Date(t.subscription_ends_at);
+      const days = Math.max(0, Math.ceil((endsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+      if (days > 30) return { label: `مفعّل (${days} يوم)`, color: 'text-emerald-500' };
+      if (days > 0) return { label: `ينتهي خلال ${days} يوم`, color: 'text-amber-500' };
+      return { label: 'منتهي', color: 'text-destructive' };
+    }
     if (t.subscription_active) return { label: 'مفعّل', color: 'text-emerald-500' };
     const trialEnd = t.trial_ends_at ? new Date(t.trial_ends_at) : null;
     if (trialEnd && new Date() < trialEnd) return { label: 'تجريبي', color: 'text-amber-500' };
