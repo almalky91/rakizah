@@ -110,6 +110,8 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
         setSchoolName((data as any).school_name || '');
         setBio((data as any).bio || '');
         setSelectedTemplate((data as any).page_template || 'classic');
+        setSubscriptionActive((data as any).subscription_active || false);
+        setSubscriptionEndsAt((data as any).subscription_ends_at ? new Date((data as any).subscription_ends_at) : null);
       }
       setLoading(false);
     };
