@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 interface SubscriptionStatus {
   trialEndsAt: Date | null;
   subscriptionActive: boolean;
+  subscriptionEndsAt: Date | null;
   loading: boolean;
 }
 
@@ -16,6 +17,7 @@ const SubscriptionGate = ({ children }: { children: React.ReactNode }) => {
   const [status, setStatus] = useState<SubscriptionStatus>({
     trialEndsAt: null,
     subscriptionActive: false,
+    subscriptionEndsAt: null,
     loading: true,
   });
 
@@ -23,13 +25,14 @@ const SubscriptionGate = ({ children }: { children: React.ReactNode }) => {
     if (!user?.id) return;
     supabase
       .from('profiles')
-      .select('trial_ends_at, subscription_active')
+      .select('trial_ends_at, subscription_active, subscription_ends_at')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         setStatus({
           trialEndsAt: data?.trial_ends_at ? new Date(data.trial_ends_at) : null,
-          subscriptionActive: data?.subscription_active || false,
+          subscriptionActive: (data as any)?.subscription_active || false,
+          subscriptionEndsAt: (data as any)?.subscription_ends_at ? new Date((data as any).subscription_ends_at) : null,
           loading: false,
         });
       });
@@ -45,16 +48,26 @@ const SubscriptionGate = ({ children }: { children: React.ReactNode }) => {
 
   const now = new Date();
   const trialActive = status.trialEndsAt && now < status.trialEndsAt;
-  const hasAccess = status.subscriptionActive || trialActive;
+  
+  // Check if subscription is active AND not expired
+  const subscriptionValid = status.subscriptionActive && 
+    (!status.subscriptionEndsAt || now < status.subscriptionEndsAt);
+  
+  const hasAccess = subscriptionValid || trialActive;
 
   if (hasAccess) {
     return <>{children}</>;
   }
 
-  // Calculate how long ago trial expired
-  const expiredText = status.trialEndsAt
-    ? `انتهت الفترة التجريبية في ${status.trialEndsAt.toLocaleDateString('ar-SA')}`
-    : 'لم يتم تعيين فترة تجريبية';
+  // Determine message
+  let expiredText = '';
+  if (status.subscriptionEndsAt && now >= status.subscriptionEndsAt) {
+    expiredText = `انتهى الاشتراك السنوي في ${status.subscriptionEndsAt.toLocaleDateString('ar-SA')}`;
+  } else if (status.trialEndsAt) {
+    expiredText = `انتهت الفترة التجريبية في ${status.trialEndsAt.toLocaleDateString('ar-SA')}`;
+  } else {
+    expiredText = 'لم يتم تعيين فترة تجريبية';
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
