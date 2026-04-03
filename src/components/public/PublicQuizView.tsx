@@ -171,7 +171,7 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
             <ChevronLeft className="w-4 h-4" />
           </Button>
 
-          {currentQ === total - 1 && Object.keys(answers).length === total && (
+          {currentQ === total - 1 && (
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring' }}>
               <Button variant="hero" size="sm" onClick={submitQuiz}>
                 تسليم الاختبار
