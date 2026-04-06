@@ -26,13 +26,13 @@ const PerformanceBoard = () => {
 
   const fetchData = async () => {
     if (!user) return;
-    const [videosRes, publicResRes, quizzesRes] = await Promise.all([
-      supabase.from('videos').select('views').eq('teacher_id', user.id),
+    const [videoViewsRes, publicResRes, quizzesRes] = await Promise.all([
+      supabase.from('public_video_views').select('id').eq('teacher_id', user.id),
       supabase.from('public_quiz_results').select('*').eq('teacher_id', user.id).order('created_at', { ascending: false }),
       supabase.from('quizzes').select('id, title').eq('teacher_id', user.id),
     ]);
 
-    const totalViews = videosRes.data?.reduce((sum, v) => sum + (v.views || 0), 0) || 0;
+    const totalViews = videoViewsRes.data?.length || 0;
     const publicData = (publicResRes.data as any[]) || [];
     const quizMap = new Map((quizzesRes.data || []).map(q => [q.id, q.title]));
 
