@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Video, Play, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -17,21 +17,100 @@ interface Props {
   onVideoWatched?: () => void;
 }
 
+// Load YouTube IFrame API once
+let ytApiLoaded = false;
+let ytApiReady = false;
+const ytReadyCallbacks: (() => void)[] = [];
+
+function loadYTApi() {
+  if (ytApiLoaded) return;
+  ytApiLoaded = true;
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+  (window as any).onYouTubeIframeAPIReady = () => {
+    ytApiReady = true;
+    ytReadyCallbacks.forEach(cb => cb());
+    ytReadyCallbacks.length = 0;
+  };
+}
+
+function onYTReady(cb: () => void) {
+  if (ytApiReady) cb();
+  else ytReadyCallbacks.push(cb);
+}
+
 const PublicVideoList = ({ videos, studentName, teacherId, onVideoWatched }: Props) => {
   const [playing, setPlaying] = useState<string | null>(null);
   const [watched, setWatched] = useState<Set<string>>(new Set());
+  const playerRef = useRef<any>(null);
+  const checkIntervalRef = useRef<number | null>(null);
 
-  const handlePlay = async (videoId: string) => {
-    const wasPlaying = playing === videoId;
-    setPlaying(wasPlaying ? null : videoId);
-    if (!wasPlaying && studentName && teacherId && !watched.has(videoId)) {
-      setWatched(prev => new Set(prev).add(videoId));
-      await supabase.from('public_video_views' as any).insert({
-        video_id: videoId,
-        teacher_id: teacherId,
-        student_name: studentName,
+  useEffect(() => {
+    loadYTApi();
+    return () => {
+      if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+    };
+  }, []);
+
+  const recordView = useCallback(async (videoId: string) => {
+    if (!studentName || !teacherId || watched.has(videoId)) return;
+    setWatched(prev => new Set(prev).add(videoId));
+    await supabase.from('public_video_views' as any).insert({
+      video_id: videoId,
+      teacher_id: teacherId,
+      student_name: studentName,
+    });
+    onVideoWatched?.();
+  }, [studentName, teacherId, watched, onVideoWatched]);
+
+  const startPlayer = useCallback((videoId: string, ytId: string) => {
+    if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+    if (playerRef.current) {
+      try { playerRef.current.destroy(); } catch {}
+      playerRef.current = null;
+    }
+
+    onYTReady(() => {
+      const YT = (window as any).YT;
+      if (!YT?.Player) return;
+
+      playerRef.current = new YT.Player(`yt-player-${videoId}`, {
+        videoId: ytId,
+        playerVars: { autoplay: 1, rel: 0 },
+        events: {
+          onReady: (event: any) => {
+            // Start checking watch progress
+            checkIntervalRef.current = window.setInterval(() => {
+              try {
+                const player = event.target;
+                const current = player.getCurrentTime();
+                const duration = player.getDuration();
+                if (duration > 0 && current / duration > 0.5) {
+                  recordView(videoId);
+                  if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+                }
+              } catch {}
+            }, 3000);
+          },
+        },
       });
-      onVideoWatched?.();
+    });
+  }, [recordView]);
+
+  const handlePlay = (videoId: string, ytId: string | null) => {
+    if (playing === videoId) {
+      setPlaying(null);
+      if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch {}
+        playerRef.current = null;
+      }
+      return;
+    }
+    setPlaying(videoId);
+    if (ytId) {
+      setTimeout(() => startPlayer(videoId, ytId), 100);
     }
   };
 
@@ -50,10 +129,10 @@ const PublicVideoList = ({ videos, studentName, teacherId, onVideoWatched }: Pro
         const ytMatch = v.youtube_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
         const ytId = ytMatch ? ytMatch[1] : null;
         return (
-          <Card key={v.id} className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 border-border/50" onClick={() => handlePlay(v.id)}>
+          <Card key={v.id} className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 border-border/50" onClick={() => handlePlay(v.id, ytId)}>
             <div className="aspect-video bg-muted relative">
               {playing === v.id && ytId ? (
-                <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1`} className="w-full h-full" allow="autoplay; encrypted-media" allowFullScreen />
+                <div id={`yt-player-${v.id}`} className="w-full h-full" />
               ) : (
                 <>
                   {ytId && <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`} alt={v.title} className="w-full h-full object-cover" />}
