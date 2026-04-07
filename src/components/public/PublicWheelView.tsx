@@ -44,7 +44,7 @@ const PublicWheelView = ({ game, onBack }: Props) => {
       <main className="max-w-xl mx-auto px-4 py-8 flex flex-col items-center gap-6">
         <div className="relative">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10 text-3xl">▼</div>
-          <svg width="300" height="300" viewBox="0 0 300 300" className="transition-transform duration-[3s] ease-out" style={{ transform: `rotate(${rotation}deg)` }}>
+          <svg width="300" height="300" viewBox="0 0 300 300" className="transition-transform duration-3000 ease-out" style={{ transform: `rotate(${rotation}deg)` }}>
             {items.map((item: string, i: number) => {
               const startAngle = i * sliceAngle;
               const endAngle = startAngle + sliceAngle;

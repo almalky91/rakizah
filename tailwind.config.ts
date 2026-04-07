@@ -103,6 +103,9 @@ export default {
         "float": "float 3s ease-in-out infinite",
         "pulse-gold": "pulse-gold 2s ease-in-out infinite",
       },
+      transitionDuration: {
+        "3000": "3000ms",
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
