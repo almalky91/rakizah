@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Eye, Check, User, Link2, Lock, Mail, CalendarDays } from 'lucide-react';
+import { Save, Palette, Eye, Check, User, Link2, Lock, Mail, CalendarDays, Phone } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 const TEMPLATES = [
@@ -88,6 +88,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
   const [originalEmail, setOriginalEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<Date | null>(null);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
   const siteUrl = 'https://rakizah.lovable.app';
@@ -98,7 +99,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, email, public_slug, page_title, school_name, bio, page_template, subscription_active, subscription_ends_at')
+        .select('full_name, email, public_slug, page_title, school_name, bio, page_template, subscription_active, subscription_ends_at, phone_number')
         .eq('id', user.id)
         .single();
       if (data) {
@@ -110,6 +111,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
         setSchoolName((data as any).school_name || '');
         setBio((data as any).bio || '');
         setSelectedTemplate((data as any).page_template || 'classic');
+        setPhoneNumber((data as any).phone_number || '');
         setSubscriptionActive((data as any).subscription_active || false);
         setSubscriptionEndsAt((data as any).subscription_ends_at ? new Date((data as any).subscription_ends_at) : null);
       }
@@ -196,6 +198,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
         school_name: schoolName || null,
         bio: bio || null,
         page_template: selectedTemplate,
+        phone_number: phoneNumber || null,
       } as any)
       .eq('id', user.id)
       .select('public_slug')
@@ -344,6 +347,21 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
               )}
             </div>
             <p className="text-xs text-muted-foreground">يمكنك تخصيص الرابط باستخدام أحرف إنجليزية وأرقام فقط، وإذا تركته فارغًا سيتم توليده تلقائيًا</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber" className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-[#25D366]" />
+              رقم الواتساب
+            </Label>
+            <Input
+              id="phoneNumber"
+              type="tel"
+              placeholder="مثال: 966500000000"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+]/g, ''))}
+              dir="ltr"
+            />
+            <p className="text-xs text-muted-foreground">أدخل رقم الواتساب مع رمز الدولة (مثال: 966 للسعودية) لإظهار أيقونة تواصل في صفحة الطالب</p>
           </div>
         </CardContent>
       </Card>
