@@ -77,6 +77,7 @@ export type Database = {
           id: string
           page_template: string
           page_title: string | null
+          phone_number: string | null
           public_slug: string | null
           school_name: string | null
           subscription_active: boolean
@@ -92,6 +93,7 @@ export type Database = {
           id: string
           page_template?: string
           page_title?: string | null
+          phone_number?: string | null
           public_slug?: string | null
           school_name?: string | null
           subscription_active?: boolean
@@ -107,6 +109,7 @@ export type Database = {
           id?: string
           page_template?: string
           page_title?: string | null
+          phone_number?: string | null
           public_slug?: string | null
           school_name?: string | null
           subscription_active?: boolean
