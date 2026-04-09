@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Eye, Check, User, Link2, Lock, Mail, CalendarDays } from 'lucide-react';
+import { Save, Palette, Eye, Check, User, Link2, Lock, Mail, CalendarDays, Phone } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 const TEMPLATES = [
@@ -88,6 +88,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
   const [originalEmail, setOriginalEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<Date | null>(null);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
   const siteUrl = 'https://rakizah.lovable.app';
@@ -98,7 +99,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, email, public_slug, page_title, school_name, bio, page_template, subscription_active, subscription_ends_at')
+        .select('full_name, email, public_slug, page_title, school_name, bio, page_template, subscription_active, subscription_ends_at, phone_number')
         .eq('id', user.id)
         .single();
       if (data) {
@@ -110,6 +111,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
         setSchoolName((data as any).school_name || '');
         setBio((data as any).bio || '');
         setSelectedTemplate((data as any).page_template || 'classic');
+        setPhoneNumber((data as any).phone_number || '');
         setSubscriptionActive((data as any).subscription_active || false);
         setSubscriptionEndsAt((data as any).subscription_ends_at ? new Date((data as any).subscription_ends_at) : null);
       }
@@ -196,6 +198,7 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
         school_name: schoolName || null,
         bio: bio || null,
         page_template: selectedTemplate,
+        phone_number: phoneNumber || null,
       } as any)
       .eq('id', user.id)
       .select('public_slug')
