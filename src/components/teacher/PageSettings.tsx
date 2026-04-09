@@ -348,6 +348,21 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
             </div>
             <p className="text-xs text-muted-foreground">يمكنك تخصيص الرابط باستخدام أحرف إنجليزية وأرقام فقط، وإذا تركته فارغًا سيتم توليده تلقائيًا</p>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber" className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-[#25D366]" />
+              رقم الواتساب
+            </Label>
+            <Input
+              id="phoneNumber"
+              type="tel"
+              placeholder="مثال: 966500000000"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+]/g, ''))}
+              dir="ltr"
+            />
+            <p className="text-xs text-muted-foreground">أدخل رقم الواتساب مع رمز الدولة (مثال: 966 للسعودية) لإظهار أيقونة تواصل في صفحة الطالب</p>
+          </div>
         </CardContent>
       </Card>
 
