@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Gamepad2, ArrowLeft } from 'lucide-react';
-import type { Game } from '@/pages/teacher/TeacherPublicPage';
+import type { Game } from '@/db/schema/content';
 
 interface Props {
   games: Game[];

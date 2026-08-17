@@ -1,18 +1,21 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Video, BookOpen, Gamepad2, Trophy, Star, Medal } from 'lucide-react';
+import { LogOut, Video, BookOpen, Gamepad2, Trophy, Star, Medal, Brain } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StudentVideos from '@/components/student/StudentVideos';
 import StudentQuizzes from '@/components/student/StudentQuizzes';
 import StudentGames from '@/components/student/StudentGames';
 import Leaderboard from '@/components/student/Leaderboard';
+import StudentSkills from '@/components/student/StudentSkills';
 
 const StudentPortal = () => {
   const { signOut, user } = useAuth();
-
+  console.log(user);
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-primary border-b border-border/10">
@@ -47,15 +50,20 @@ const StudentPortal = () => {
               <BookOpen className="w-4 h-4" />
               <span className="hidden sm:inline">اختبارات</span>
             </TabsTrigger>
-            <TabsTrigger value="games" className="flex items-center gap-2 py-3">
+            {/* <TabsTrigger value="games" className="flex items-center gap-2 py-3">
               <Gamepad2 className="w-4 h-4" />
               <span className="hidden sm:inline">ألعاب</span>
+            </TabsTrigger> */}
+            <TabsTrigger value="skills" className="flex items-center gap-2 py-3">
+              <Brain className="w-4 h-4" />
+              <span className="hidden sm:inline">مركز التعلم</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="videos"><StudentVideos /></TabsContent>
           <TabsContent value="quizzes"><StudentQuizzes /></TabsContent>
-          <TabsContent value="games"><StudentGames /></TabsContent>
+          {/* <TabsContent value="games"><StudentGames /></TabsContent> */}
+          <TabsContent value="skills"><StudentSkills /></TabsContent>          
         </Tabs>
       </main>
     </div>

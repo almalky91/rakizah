@@ -1,6 +1,8 @@
+'use client';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { BookOpen, ArrowLeft } from 'lucide-react';
-import type { Quiz } from '@/pages/teacher/TeacherPublicPage';
+import type { Quiz } from '@/db/schema/content';
 
 interface Props {
   quizzes: Quiz[];
@@ -28,7 +30,7 @@ const PublicQuizList = ({ quizzes, onStartQuiz }: Props) => {
                   <BookOpen className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="font-semibold text-lg mb-1">{q.title}</h3>
-                <p className="text-sm text-muted-foreground">{q.questions?.length || 0} سؤال</p>
+                <p className="text-sm text-muted-foreground">{JSON.parse(q.questions)?.length} سؤال</p>
               </div>
               <ArrowLeft className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:-translate-x-1 transition-all" />
             </div>

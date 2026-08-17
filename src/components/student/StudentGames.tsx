@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,7 +36,7 @@ const StudentGames = () => {
         <Card>
           <CardContent className="text-center py-12 text-muted-foreground">
             <Gamepad2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p>لا توجد ألعاب متاحة حالياً</p>
+            <p>لا توجد مهارات متاحة حالياً</p>
           </CardContent>
         </Card>
       ) : (

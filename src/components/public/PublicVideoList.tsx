@@ -1,17 +1,13 @@
+'use client';
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Video, Play, Eye } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-
-interface VideoItem {
-  id: string;
-  title: string;
-  youtube_url: string;
-  views: number;
-}
+import { Video as VideoIcon, Play, Eye } from 'lucide-react';
+import { videoApi } from '@/lib/api-client';
+import type { Video } from '@/db/schema/content';
 
 interface Props {
-  videos: VideoItem[];
+  videos: Video[];
   studentName?: string;
   teacherId?: string;
   onVideoWatched?: () => void;
@@ -56,12 +52,12 @@ const PublicVideoList = ({ videos, studentName, teacherId, onVideoWatched }: Pro
   const recordView = useCallback(async (videoId: string) => {
     if (!studentName || !teacherId || watched.has(videoId)) return;
     setWatched(prev => new Set(prev).add(videoId));
-    await supabase.from('public_video_views' as any).insert({
-      video_id: videoId,
-      teacher_id: teacherId,
-      student_name: studentName,
-    });
-    onVideoWatched?.();
+    try {
+      await videoApi.trackPublicView(videoId, studentName);
+      onVideoWatched?.();
+    } catch (error) {
+      console.error('Failed to record video view:', error);
+    }
   }, [studentName, teacherId, watched, onVideoWatched]);
 
   const startPlayer = useCallback((videoId: string, ytId: string) => {
@@ -117,7 +113,7 @@ const PublicVideoList = ({ videos, studentName, teacherId, onVideoWatched }: Pro
   if (videos.length === 0) {
     return (
       <Card><CardContent className="text-center py-16 text-muted-foreground">
-        <Video className="w-16 h-16 mx-auto mb-4 opacity-20" />
+        <VideoIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
         <p className="text-lg">لا توجد فيديوهات متاحة حالياً</p>
       </CardContent></Card>
     );
@@ -126,7 +122,7 @@ const PublicVideoList = ({ videos, studentName, teacherId, onVideoWatched }: Pro
   return (
     <div className="grid sm:grid-cols-2 gap-4">
       {videos.map(v => {
-        const ytMatch = v.youtube_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+        const ytMatch = v.youtubeUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
         const ytId = ytMatch ? ytMatch[1] : null;
         return (
           <Card key={v.id} className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 border-border/50" onClick={() => handlePlay(v.id, ytId)}>

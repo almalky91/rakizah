@@ -1,27 +1,32 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Video, BookOpen, Gamepad2, BarChart3, LogOut, Star, Link2, Copy, Check, Settings } from 'lucide-react';
+import { Video, BookOpen, Brain, BarChart3, LogOut, Star, Link2, Check, Settings } from 'lucide-react';
 import VideoCenter from '@/components/teacher/VideoCenter';
 import QuizCenter from '@/components/teacher/QuizCenter';
-import GameCenter from '@/components/teacher/GameCenter';
+import SkillsCenter from '@/components/teacher/SkillsCenter';
 import PerformanceBoard from '@/components/teacher/PerformanceBoard';
 import PageSettings from '@/components/teacher/PageSettings';
 import SubscriptionGate from '@/components/teacher/SubscriptionGate';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-client';
 
 const TeacherDashboard = () => {
   const { signOut, user } = useAuth();
+  const [teacher, setTeacher] = useState<any | null>(null);
   const [copied, setCopied] = useState(false);
   const [publicSlug, setPublicSlug] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.id) {
-      supabase.from('profiles').select('public_slug').eq('id', user.id).single()
-        .then(({ data }) => setPublicSlug((data as any)?.public_slug || null));
+    if (!user?.id) {
+      setTeacher(null);
+      return;
     }
+
+    fetchTeacher(user.id);
   }, [user]);
 
   const publicLink = publicSlug ? `${window.location.origin}/p/${publicSlug}` : '';
@@ -38,8 +43,21 @@ const TeacherDashboard = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const fetchTeacher = async (teacherId: string) => {
+    try {
+      const teacher = await apiFetch(`/teachers/${teacherId}`);
+
+      setPublicSlug(teacher.publicSlug || null);
+      setTeacher(teacher);
+
+    } catch(error) {
+      console.error(error);
+      toast.error("خطأ اثناء جلب بيانات المعلم");
+    }
+  }
+
   return (
-    <SubscriptionGate>
+    <SubscriptionGate teacher={teacher}>
     <div className="min-h-screen bg-background">
       <header className="gradient-primary border-b border-border/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -76,9 +94,9 @@ const TeacherDashboard = () => {
               <BookOpen className="w-4 h-4" />
               <span className="hidden sm:inline">الاختبارات</span>
             </TabsTrigger>
-            <TabsTrigger value="games" className="flex items-center gap-2 py-3">
-              <Gamepad2 className="w-4 h-4" />
-              <span className="hidden sm:inline">الألعاب</span>
+            <TabsTrigger value="skills" className="flex items-center gap-2 py-3">
+              <Brain className="w-4 h-4" />
+              <span className="hidden sm:inline">مركز المهارات</span>
             </TabsTrigger>
             <TabsTrigger value="performance" className="flex items-center gap-2 py-3">
               <BarChart3 className="w-4 h-4" />
@@ -92,7 +110,7 @@ const TeacherDashboard = () => {
 
           <TabsContent value="videos"><VideoCenter /></TabsContent>
           <TabsContent value="quizzes"><QuizCenter /></TabsContent>
-          <TabsContent value="games"><GameCenter /></TabsContent>
+          <TabsContent value="skills"><SkillsCenter /></TabsContent>
           <TabsContent value="performance"><PerformanceBoard /></TabsContent>
           <TabsContent value="settings"><PageSettings onPublicSlugChange={setPublicSlug} /></TabsContent>
         </Tabs>

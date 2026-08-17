@@ -1,21 +1,29 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import TeacherDashboard from '@/pages/teacher/TeacherDashboard';
 import StudentPortal from '@/pages/student/StudentPortal';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const DashboardRouter = () => {
   const { user, loading, userRole } = useAuth();
+  const router = useRouter();
 
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [loading, user, router]);
+
+  // Show loading UI while NextAuth session initializes
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <LoadingSpinner fullScreen size="lg" text="جاري تحميل البيانات..." />;
   }
 
-  if (!user) return <Navigate to="/login" />;
+  if (!user) {
+    return null; // Will redirect via useEffect
+  }
 
   switch (userRole) {
     case 'admin':

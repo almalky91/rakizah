@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { quizResultsApi, videoViewsApi } from '@/lib/api-client';
 import { Trophy, Star, Award, X } from 'lucide-react';
 
 interface LeaderboardEntry {
@@ -20,48 +20,44 @@ const PublicLeaderboard = ({ teacherId }: Props) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [quizRes, videoRes] = await Promise.all([
-        supabase
-          .from('public_quiz_results')
-          .select('student_name, score, total_questions')
-          .eq('teacher_id', teacherId),
-        supabase
-          .from('public_video_views' as any)
-          .select('student_name')
-          .eq('teacher_id', teacherId),
-      ]);
+      try {
+        const [quizData, videoData] = await Promise.all([
+          quizResultsApi.getPublicByTeacher(teacherId),
+          videoViewsApi.getPublicByTeacher(teacherId),
+        ]);
 
-      const quizData = (quizRes.data as any[]) || [];
-      const videoData = (videoRes.data as any[]) || [];
+        const videoWatchers = new Set(videoData.map((v: any) => v.student_name));
+        const studentMap = new Map<string, { totalScore: number; quizCount: number }>();
 
-      const videoWatchers = new Set(videoData.map((v: any) => v.student_name));
-      const studentMap = new Map<string, { totalScore: number; quizCount: number }>();
+        quizData.forEach((r: any) => {
+          const existing = studentMap.get(r.student_name) || { totalScore: 0, quizCount: 0 };
+          existing.totalScore += r.score;
+          existing.quizCount += 1;
+          studentMap.set(r.student_name, existing);
+        });
 
-      quizData.forEach((r: any) => {
-        const existing = studentMap.get(r.student_name) || { totalScore: 0, quizCount: 0 };
-        existing.totalScore += r.score;
-        existing.quizCount += 1;
-        studentMap.set(r.student_name, existing);
-      });
+        videoWatchers.forEach(name => {
+          if (!studentMap.has(name)) {
+            studentMap.set(name, { totalScore: 0, quizCount: 0 });
+          }
+        });
 
-      videoWatchers.forEach(name => {
-        if (!studentMap.has(name)) {
-          studentMap.set(name, { totalScore: 0, quizCount: 0 });
-        }
-      });
+        const list: LeaderboardEntry[] = Array.from(studentMap.entries())
+          .map(([name, data]) => ({
+            student_name: name,
+            total_score: data.totalScore,
+            quiz_count: data.quizCount,
+            watched_videos: videoWatchers.has(name),
+          }))
+          .sort((a, b) => b.total_score - a.total_score)
+          .slice(0, 10);
 
-      const list: LeaderboardEntry[] = Array.from(studentMap.entries())
-        .map(([name, data]) => ({
-          student_name: name,
-          total_score: data.totalScore,
-          quiz_count: data.quizCount,
-          watched_videos: videoWatchers.has(name),
-        }))
-        .sort((a, b) => b.total_score - a.total_score)
-        .slice(0, 10);
-
-      setEntries(list);
-      setLoading(false);
+        setEntries(list);
+      } catch (error) {
+        console.error('Error fetching leaderboard data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, [teacherId]);

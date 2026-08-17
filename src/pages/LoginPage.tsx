@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +23,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('teacher');
   const { signIn } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const roleMap: Record<string, string> = {
     admin: 'admin',
@@ -56,7 +57,7 @@ const LoginPage = () => {
       }
 
       toast.success('تم تسجيل الدخول بنجاح');
-      navigate('/dashboard');
+      router.push('/dashboard');
     } catch (err: any) {
       toast.error(err.message || 'فشل تسجيل الدخول');
     } finally {
@@ -68,7 +69,7 @@ const LoginPage = () => {
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4">
       <Card className="w-full max-w-md glass">
         <CardHeader className="text-center pb-2">
-          <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4">
+          <Link href="/" className="inline-flex items-center gap-2 justify-center mb-4">
             <img src={logoImg} alt="شعار المنصة" className="w-10 h-10 rounded-xl object-cover" />
             <span className="text-xl font-bold">منصتي التعليمية</span>
           </Link>

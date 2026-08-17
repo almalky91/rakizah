@@ -1,106 +1,177 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Plus, Trash2, LogOut, Shield, BookOpen, Video, Gamepad2, ExternalLink, Copy, Check, BarChart3, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-interface Teacher {
-  id: string;
-  email: string;
-  full_name: string;
-  created_at: string;
-  public_slug: string | null;
-  school_name: string | null;
-  trial_ends_at: string | null;
-  subscription_active: boolean;
-  subscription_ends_at: string | null;
-}
-
-interface TeacherStats {
-  quizzes: number;
-  videos: number;
-  games: number;
-  publicResults: number;
-}
+import { skillsApi } from '@/lib/skillsApi';
+import {
+  Teacher,
+  TeacherStats,
+  Grade,
+  Subject,
+  Field,
+  Skill
+} from '@/components/admin/types';
+import { AdminHeader } from '@/components/admin/AdminHeader';
+import { TeachersTab } from '@/components/admin/TeachersTab';
+import { SkillsTab } from '@/components/admin/SkillsTab';
+import { apiFetch } from '@/lib/api-client';
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState('teachers');
+  
+  // Teachers state
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [stats, setStats] = useState<Record<string, TeacherStats>>({});
-  const [newEmail, setNewEmail] = useState('');
-  const [newName, setNewName] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+
+  // Skills Management state
+  // const [grades, setGrades] = useState<Grade[]>([
+  //   { id: '1', name: 'الصف الثالث الابتدائي', level: 3, display_order: 1 },
+  //   { id: '2', name: 'الصف السادس الابتدائي', level: 6, display_order: 2 },
+  //   { id: '3', name: 'الصف التاسع المتوسط', level: 9, display_order: 3 },
+  // ]);
+  const [grades, setGrades] = useState<Grade[]>([]);
+
+
+  // const [subjects, setSubjects] = useState<Subject[]>([
+  //   { id: '1', name: 'الرياضيات', icon: 'BookOpen', color: '#10b981', display_order: 1, grade_id: '1' },
+  //   { id: '2', name: 'العلوم الطبيعية', icon: 'Beaker', color: '#3b82f6', display_order: 2, grade_id: '1' },
+  // ]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  // const [fields, setFields] = useState<Field[]>([
+  //   { id: '1', subject_id: '1', name: 'الأعداد والعمليات', display_order: 1 },
+  //   { id: '2', subject_id: '1', name: 'الجبر والتحليل', display_order: 2 },
+  //   { id: '3', subject_id: '1', name: 'الهندسة والقياس', display_order: 3 },
+  //   { id: '4', subject_id: '1', name: 'الإحصاء والاحتمالات', display_order: 4 },
+  //   { id: '5', subject_id: '2', name: 'علوم الحياة', display_order: 1 },
+  //   { id: '6', subject_id: '2', name: 'العلوم الفيزيائية', display_order: 2 },
+  //   { id: '7', subject_id: '2', name: 'علوم الأرض والفضاء', display_order: 3 },
+  // ]);
+  const [fields, setFields] = useState<Field[]>([]);
+
+  const [skills, setSkills] = useState<Skill[]>([]);
+
+  const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set());
+  const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set());
+  const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
+  const [skillDialogOpen, setSkillDialogOpen] = useState(false);
+  const [gradeDialogOpen, setGradeDialogOpen] = useState(false);
+  const [subjectDialogOpen, setSubjectDialogOpen] = useState(false);
+  const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
 
   const fetchTeachers = async () => {
-    const { data: roleData } = await supabase.from('user_roles').select('user_id').eq('role', 'teacher');
-    const teacherIds = roleData?.map(r => r.user_id) || [];
-    if (teacherIds.length === 0) { setTeachers([]); return; }
+    const data = await apiFetch("/teachers");
 
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, created_at, public_slug, school_name, trial_ends_at, subscription_active, subscription_ends_at')
-      .in('id', teacherIds);
     setTeachers((data as any) || []);
+    console.log(data)
+    // Fetch stats for each teacher and skills hierarchy
+    const hierarchyData = await skillsApi.getHierarchy()
 
-    // Fetch stats for each teacher
-    const [quizzesRes, videosRes, gamesRes, resultsRes] = await Promise.all([
-      supabase.from('quizzes').select('teacher_id').in('teacher_id', teacherIds),
-      supabase.from('videos').select('teacher_id').in('teacher_id', teacherIds),
-      supabase.from('games').select('teacher_id').in('teacher_id', teacherIds),
-      supabase.from('public_quiz_results').select('teacher_id').in('teacher_id', teacherIds),
-    ]);
+    console.log(hierarchyData)
+    // Transform hierarchy data to flat arrays for component compatibility
+    // The API returns a grade -> subjects -> fields -> skills payload.
+    // We must consume each grade branch once and keep that order stable.
+    const gradesData: Grade[] = [];
+    const subjectsData: Subject[] = [];
+    const fieldsData: Field[] = [];
+    const skillsData: Skill[] = [];
+
+    hierarchyData?.forEach(({ grade: gradeNode }) => {
+      // Add grade (convert camelCase to snake_case for component compatibility)
+      gradesData.push({
+        id: gradeNode.id,
+        name: gradeNode.name,
+        level: 0,
+        display_order: gradeNode.displayOrder
+      });
+
+      const gradeSubjects = gradeNode.subjects?.subjects ?? [];
+      const gradeFields = gradeNode.subjects?.fields?.fields ?? [];
+      const gradeSkills = gradeNode.subjects?.fields?.skills ?? [];
+
+      gradeSubjects.forEach(subject => {
+        subjectsData.push({
+          id: subject.id,
+          name: subject.name,
+          icon: '',
+          color: '',
+          display_order: subject.displayOrder,
+          grade_id: subject.gradeId
+        });
+      });
+
+      gradeFields.forEach(field => {
+        fieldsData.push({
+          id: field.id,
+          subject_id: field.subjectId,
+          name: field.name,
+          display_order: field.displayOrder
+        });
+      });
+
+      gradeSkills.forEach(skill => {
+        skillsData.push({
+          id: skill.id,
+          field_id: skill.fieldId,
+          grade_id: skill.gradeId,
+          skill_number: skill.skillNumber,
+          title: skill.title,
+          difficulty_level: skill.difficultyLevel as 'basic' | 'intermediate' | 'advanced',
+          is_active: true,
+          display_order: skill.displayOrder
+        });
+      });
+    });
 
     const statsMap: Record<string, TeacherStats> = {};
-    teacherIds.forEach(id => {
-      statsMap[id] = {
-        quizzes: (quizzesRes.data || []).filter((q: any) => q.teacher_id === id).length,
-        videos: (videosRes.data || []).filter((v: any) => v.teacher_id === id).length,
-        games: (gamesRes.data || []).filter((g: any) => g.teacher_id === id).length,
-        publicResults: (resultsRes.data || []).filter((r: any) => r.teacher_id === id).length,
-      };
-    });
-    setStats(statsMap);
+    // teachers?.forEach(id => {
+    //   statsMap[id] = {
+    //     quizzes: (quizzesRes.data || []).filter((q: any) => q.teacher_id === id).length,
+    //     videos: (videosRes.data || []).filter((v: any) => v.teacher_id === id).length,
+    //     games: (gamesRes.data || []).filter((g: any) => g.teacher_id === id).length,
+    //     publicResults: (resultsRes.data || []).filter((r: any) => r.teacher_id === id).length,
+    //   };
+    // });
+    // setStats(statsMap);
+    setGrades(gradesData);
+    setSubjects(subjectsData);
+    setFields(fieldsData);
+    setSkills(skillsData);
   };
 
   useEffect(() => { fetchTeachers(); }, []);
 
-  const addTeacher = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const addTeacher = async (email: string, name: string, password: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('create-teacher', {
-        body: { email: newEmail, password: newPassword, fullName: newName },
+      await apiFetch('/teachers', {
+        method: 'POST',
+        body: { email, password, fullName: name },
       });
-      if (error) throw error;
+
       toast.success('تم إضافة المعلم بنجاح');
-      setNewEmail(''); setNewName(''); setNewPassword('');
-      setOpen(false);
       fetchTeachers();
-    } catch (err: any) {
-      toast.error(err.message || 'فشل في إضافة المعلم');
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      console.error('Error creating teacher:', error);
+      toast.error(error?.message || 'فشل في إضافة المعلم');
     }
   };
 
   const removeTeacher = async (teacherId: string) => {
     try {
-      await supabase.from('user_roles').delete().eq('user_id', teacherId).eq('role', 'teacher');
+      await apiFetch('/teachers', {
+        method: 'DELETE',
+        body: { teacherId },
+      });
       toast.success('تم إزالة صلاحيات المعلم');
-      setSelectedTeacher(null);
       fetchTeachers();
-    } catch {
-      toast.error('فشل في الإزالة');
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || 'فشل في الإزالة');
     }
   };
 
@@ -113,292 +184,242 @@ const AdminDashboard = () => {
 
   const toggleSubscription = async (teacherId: string, active: boolean) => {
     try {
-      const { error } = await supabase.functions.invoke('toggle-teacher-subscription', {
-        body: { teacherId, active },
+      await apiFetch(`/teachers/${teacherId}/toggle-subscription`, {
+        method: 'PATCH',
+        body: { teacherId, subscriptionActive: active },
       });
-      if (error) throw error;
       toast.success(active ? 'تم تفعيل الاشتراك' : 'تم إيقاف الاشتراك');
       fetchTeachers();
-    } catch {
-      toast.error('فشل في تغيير حالة الاشتراك');
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || 'فشل في تغيير حالة الاشتراك');
     }
   };
 
   const getSubscriptionStatus = (t: Teacher) => {
-    if (t.subscription_active && t.subscription_ends_at) {
-      const endsAt = new Date(t.subscription_ends_at);
+    if (t.subscriptionActive && t.subscriptionEndsAt) {
+      const endsAt = new Date(t.subscriptionEndsAt);
       const days = Math.max(0, Math.ceil((endsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
       if (days > 30) return { label: `مفعّل (${days} يوم)`, color: 'text-emerald-500' };
       if (days > 0) return { label: `ينتهي خلال ${days} يوم`, color: 'text-amber-500' };
       return { label: 'منتهي', color: 'text-destructive' };
     }
-    if (t.subscription_active) return { label: 'مفعّل', color: 'text-emerald-500' };
-    const trialEnd = t.trial_ends_at ? new Date(t.trial_ends_at) : null;
+    if (t.subscriptionActive) return { label: 'مفعّل', color: 'text-emerald-500' };
+    const trialEnd = t.trialEndsAt ? new Date(t.trialEndsAt) : null;
     if (trialEnd && new Date() < trialEnd) return { label: 'تجريبي', color: 'text-amber-500' };
     return { label: 'متوقف', color: 'text-destructive' };
   };
 
-  const totalStats = {
-    teachers: teachers.length,
-    quizzes: Object.values(stats).reduce((s, t) => s + t.quizzes, 0),
-    videos: Object.values(stats).reduce((s, t) => s + t.videos, 0),
-    results: Object.values(stats).reduce((s, t) => s + t.publicResults, 0),
+  // Skills Management functions
+  const toggleGrade = (gradeId: string) => {
+    setExpandedGrades(prev => {
+      const next = new Set(prev);
+      if (next.has(gradeId)) next.delete(gradeId);
+      else next.add(gradeId);
+      return next;
+    });
+  };
+
+  const toggleSubject = (subjectId: string) => {
+    setExpandedSubjects(prev => {
+      const next = new Set(prev);
+      if (next.has(subjectId)) next.delete(subjectId);
+      else next.add(subjectId);
+      return next;
+    });
+  };
+
+  const toggleField = (fieldId: string) => {
+    setExpandedFields(prev => {
+      const next = new Set(prev);
+      if (next.has(fieldId)) next.delete(fieldId);
+      else next.add(fieldId);
+      return next;
+    });
+  };
+
+  const addSkill = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    const payload = {
+      title: formData.get('title') as string,
+      grade_id: formData.get('grade_id') as string,
+      field_id: formData.get('field_id') as string,
+      subject_id: formData.get('subject_id') as string,
+      skill_number: Number(formData.get('skill_number') ?? 1),
+      difficulty_level: formData.get('difficulty_level') as 'basic' | 'intermediate' | 'advanced',
+      display_order: Number(formData.get('display_order') ?? 1),
+      description: (formData.get('description') as string) || undefined,
+    };
+
+    try {
+      await apiFetch('/skills', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      toast.success('تم إضافة المهارة بنجاح');
+      await fetchTeachers();
+      setSkillDialogOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || 'فشل إضافة المهارة');
+    }
+  };
+
+  const deleteSkill = async (skillId: string) => {
+    try {
+      await apiFetch(`/skills/${skillId}`, {
+        method: "DELETE",
+      });
+
+      setSkills(prevSkills => prevSkills.filter(skill => skill.id !== skillId));
+      toast.success('تم حذف المهارة بنجاح');
+    } catch(error) {
+      console.error(error.message);
+      toast.error('فشل حذف المهارة');
+    }
+  };
+
+  const addGrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    const payload = {
+      name: formData.get('name') as string,
+      level: Number(formData.get('level') ?? 1),
+      display_order: Number(formData.get('display_order') ?? 1),
+    };
+
+    try {
+      await apiFetch('/grades', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      toast.success('تم إضافة الصف بنجاح');
+      await fetchTeachers();
+      setGradeDialogOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || 'فشل إضافة الصف');
+    }
+  };
+
+  const addSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    const payload = {
+      name: formData.get('name') as string,
+      icon: formData.get('icon') as string,
+      color: formData.get('color') as string,
+      display_order: Number(formData.get('display_order') ?? 1),
+      grade_id: formData.get('grade_id') as string,
+    };
+
+    try {
+      await apiFetch('/subjects', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      toast.success('تم إضافة المادة بنجاح');
+      await fetchTeachers();
+      setSubjectDialogOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || 'فشل إضافة المادة');
+    }
+  };
+
+  const addField = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    const payload = {
+      subject_id: formData.get('subject_id') as string,
+      name: formData.get('name') as string,
+      description: (formData.get('description') as string) || undefined,
+      display_order: Number(formData.get('display_order') ?? 1),
+    };
+
+    try {
+      await apiFetch('/fields', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      toast.success('تم إضافة المجال بنجاح');
+      await fetchTeachers();
+      setFieldDialogOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || 'فشل إضافة المجال');
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="gradient-primary border-b border-border/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-primary-foreground">لوحة تحكم المدير</h1>
-              <p className="text-sm text-primary-foreground/60">إدارة المعلمين والمنصة</p>
-            </div>
-          </div>
-          <Button variant="ghost" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
-            <LogOut className="w-4 h-4 ml-2" />
-            <span className="hidden sm:inline">تسجيل الخروج</span>
-          </Button>
-        </div>
-      </header>
+      <AdminHeader onSignOut={signOut} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-        {/* Stats cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{totalStats.teachers}</p>
-                <p className="text-muted-foreground text-xs">معلم</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <BookOpen className="w-5 h-5 text-emerald-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{totalStats.quizzes}</p>
-                <p className="text-muted-foreground text-xs">اختبار</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-                <Video className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{totalStats.videos}</p>
-                <p className="text-muted-foreground text-xs">فيديو</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                <BarChart3 className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{totalStats.results}</p>
-                <p className="text-muted-foreground text-xs">نتيجة اختبار</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+            <TabsTrigger value="teachers" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>المعلمون</span>
+            </TabsTrigger>
+            <TabsTrigger value="skills" className="flex items-center gap-2">
+              <GraduationCap className="w-4 h-4" />
+              <span>مركز المهارات</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Teachers list */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users className="w-5 h-5" />
-              إدارة المعلمين
-            </CardTitle>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إضافة معلم</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>إضافة معلم جديد</DialogTitle></DialogHeader>
-                <form onSubmit={addTeacher} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>الاسم الكامل</Label>
-                    <Input value={newName} onChange={e => setNewName(e.target.value)} required placeholder="اسم المعلم" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>البريد الإلكتروني</Label>
-                    <Input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} required placeholder="email@example.com" dir="ltr" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>كلمة المرور</Label>
-                    <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required placeholder="كلمة المرور" dir="ltr" />
-                  </div>
-                  <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-                    {loading ? 'جاري الإضافة...' : 'إضافة المعلم'}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent>
-            {teachers.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                <p>لا يوجد معلمون بعد</p>
-                <p className="text-sm">اضغط على "إضافة معلم" لإضافة أول معلم</p>
-              </div>
-            ) : (
-              <>
-                {/* Mobile: Cards view */}
-                <div className="sm:hidden space-y-3">
-                  {teachers.map(t => {
-                    const s = stats[t.id] || { quizzes: 0, videos: 0, games: 0, publicResults: 0 };
-                    return (
-                      <div key={t.id} className="p-4 rounded-xl bg-muted/50 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-                              {t.full_name?.charAt(0) || '؟'}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-sm">{t.full_name}</p>
-                              <p className="text-xs text-muted-foreground" dir="ltr">{t.email}</p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="icon" onClick={() => removeTeacher(t.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        {t.school_name && (
-                          <p className="text-xs text-muted-foreground">{t.school_name}</p>
-                        )}
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{s.quizzes}</span>
-                          <span className="flex items-center gap-1"><Video className="w-3 h-3" />{s.videos}</span>
-                          <span className="flex items-center gap-1"><Gamepad2 className="w-3 h-3" />{s.games}</span>
-                          <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" />{s.publicResults} نتيجة</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-medium ${getSubscriptionStatus(t).color}`}>
-                              {getSubscriptionStatus(t).label}
-                            </span>
-                            <Button
-                              variant={t.subscription_active ? "outline" : "default"}
-                              size="sm"
-                              className="text-xs h-7"
-                              onClick={() => toggleSubscription(t.id, !t.subscription_active)}
-                            >
-                              {t.subscription_active ? 'إيقاف' : 'تفعيل'}
-                            </Button>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {t.public_slug && (
-                              <>
-                                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => copyLink(t.public_slug!, t.id)}>
-                                  {copiedId === t.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                </Button>
-                                <Button variant="outline" size="sm" className="text-xs h-7" asChild>
-                                  <a href={`/p/${t.public_slug}`} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+          {/* Teachers Tab */}
+          <TabsContent value="teachers">
+            <TeachersTab
+              teachers={teachers}
+              stats={stats}
+              copiedId={copiedId}
+              onAddTeacher={addTeacher}
+              onRemoveTeacher={removeTeacher}
+              onCopyLink={copyLink}
+              onToggleSubscription={toggleSubscription}
+              getSubscriptionStatus={getSubscriptionStatus}
+            />
+          </TabsContent>
 
-                {/* Desktop: Table view */}
-                <div className="hidden sm:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-right">المعلم</TableHead>
-                        <TableHead className="text-right">المدرسة</TableHead>
-                        <TableHead className="text-center">الحالة</TableHead>
-                        <TableHead className="text-center">اختبارات</TableHead>
-                        <TableHead className="text-center">فيديو</TableHead>
-                        <TableHead className="text-center">ألعاب</TableHead>
-                        <TableHead className="text-center">نتائج</TableHead>
-                        <TableHead className="text-center">الرابط</TableHead>
-                        <TableHead className="text-center">إجراءات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {teachers.map(t => {
-                        const s = stats[t.id] || { quizzes: 0, videos: 0, games: 0, publicResults: 0 };
-                        const subStatus = getSubscriptionStatus(t);
-                        return (
-                          <TableRow key={t.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-                                  {t.full_name?.charAt(0) || '؟'}
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-sm">{t.full_name}</p>
-                                  <p className="text-xs text-muted-foreground" dir="ltr">{t.email}</p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-sm">{t.school_name || '—'}</TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <span className={`text-xs font-medium ${subStatus.color}`}>{subStatus.label}</span>
-                                <Button
-                                  variant={t.subscription_active ? "outline" : "default"}
-                                  size="sm"
-                                  className="text-xs h-6 px-2"
-                                  onClick={() => toggleSubscription(t.id, !t.subscription_active)}
-                                >
-                                  {t.subscription_active ? 'إيقاف' : 'تفعيل'}
-                                </Button>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center font-medium">{s.quizzes}</TableCell>
-                            <TableCell className="text-center font-medium">{s.videos}</TableCell>
-                            <TableCell className="text-center font-medium">{s.games}</TableCell>
-                            <TableCell className="text-center font-medium">{s.publicResults}</TableCell>
-                            <TableCell className="text-center">
-                              {t.public_slug ? (
-                                <div className="flex items-center justify-center gap-1">
-                                  <Button variant="ghost" size="icon" onClick={() => copyLink(t.public_slug!, t.id)} title="نسخ الرابط">
-                                    {copiedId === t.id ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                                  </Button>
-                                  <Button variant="ghost" size="icon" asChild title="فتح الصفحة">
-                                    <a href={`/p/${t.public_slug}`} target="_blank" rel="noopener noreferrer">
-                                      <ExternalLink className="w-4 h-4" />
-                                    </a>
-                                  </Button>
-                                </div>
-                              ) : '—'}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Button variant="ghost" size="icon" onClick={() => removeTeacher(t.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+          {/* Skills Management Tab */}
+          <TabsContent value="skills">
+            <SkillsTab
+              grades={grades}
+              subjects={subjects}
+              fields={fields}
+              skills={skills}
+              expandedGrades={expandedGrades}
+              expandedSubjects={expandedSubjects}
+              expandedFields={expandedFields}
+              skillDialogOpen={skillDialogOpen}
+              gradeDialogOpen={gradeDialogOpen}
+              subjectDialogOpen={subjectDialogOpen}
+              fieldDialogOpen={fieldDialogOpen}
+              onToggleGrade={toggleGrade}
+              onToggleSubject={toggleSubject}
+              onToggleField={toggleField}
+              onSkillDialogOpenChange={setSkillDialogOpen}
+              onGradeDialogOpenChange={setGradeDialogOpen}
+              onSubjectDialogOpenChange={setSubjectDialogOpen}
+              onFieldDialogOpenChange={setFieldDialogOpen}
+              onAddSkill={addSkill}
+              onAddGrade={addGrade}
+              onAddSubject={addSubject}
+              onAddField={addField}
+              onDeleteSkill={deleteSkill}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

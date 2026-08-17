@@ -1,6 +1,10 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { quizApi, gameApi } from '@/lib/api-client';
+import type { Quiz } from '@/db/schema/content';
+import type { Profile } from '@/db/schema/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Check, X } from 'lucide-react';
@@ -8,28 +12,33 @@ import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
+interface QuizWithTeacher extends Quiz {
+  teacher?: Profile;
+}
+
 const StudentQuizzes = () => {
   const { user } = useAuth();
-  const [quizzes, setQuizzes] = useState<any[]>([]);
-  const [activeQuiz, setActiveQuiz] = useState<any>(null);
+  const [quizzes, setQuizzes] = useState<QuizWithTeacher[]>([]);
+  const [activeQuiz, setActiveQuiz] = useState<QuizWithTeacher | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from('quizzes')
-        .select('*, profiles(full_name)')
-        .order('created_at', { ascending: false });
-      setQuizzes(data || []);
+    const fetchQuizzes = async () => {
+      try {
+        const data = await quizApi.list();
+        setQuizzes(data);
+      } catch (error) {
+        console.error('Failed to fetch quizzes:', error);
+      }
     };
-    fetch();
+    fetchQuizzes();
   }, []);
 
   const submitQuiz = async () => {
-    if (!activeQuiz) return;
-    const questions = activeQuiz.questions || [];
+    if (!activeQuiz || !user) return;
+    const questions = Array.isArray(activeQuiz.questions) ? activeQuiz.questions : [];
     let correct = 0;
     questions.forEach((q: any, i: number) => {
       if (answers[i] === q.correct) correct++;
@@ -38,28 +47,24 @@ const StudentQuizzes = () => {
     setScore(scorePercent);
     setSubmitted(true);
 
-    // Save result
-    await supabase.from('quiz_results').insert({
-      quiz_id: activeQuiz.id,
-      student_id: user?.id,
-      teacher_id: activeQuiz.teacher_id,
-      score: scorePercent,
-      answers,
-    });
+    try {
+      // Save result and add points through API
+      await gameApi.submitScore({
+        source: 'quiz',
+        points: correct * 10,
+        studentId: user.id,
+        teacherId: activeQuiz.teacherId,
+      });
 
-    // Add points
-    await supabase.from('game_scores').insert({
-      student_id: user?.id,
-      teacher_id: activeQuiz.teacher_id,
-      points: correct * 10,
-      source: 'quiz',
-    });
-
-    toast.success(`حصلت على ${scorePercent}%`);
+      toast.success(`حصلت على ${scorePercent}%`);
+    } catch (error) {
+      console.error('Failed to submit quiz:', error);
+      toast.error('فشل حفظ النتيجة');
+    }
   };
 
   if (activeQuiz) {
-    const questions = activeQuiz.questions || [];
+    const questions = Array.isArray(activeQuiz.questions) ? activeQuiz.questions : [];
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -123,7 +128,7 @@ const StudentQuizzes = () => {
                 <BookOpen className="w-8 h-8 text-primary mb-3" />
                 <h3 className="font-semibold text-lg mb-1">{q.title}</h3>
                 <p className="text-sm text-muted-foreground">{q.questions?.length || 0} سؤال</p>
-                <p className="text-xs text-muted-foreground mt-1">{(q.profiles as any)?.full_name || 'معلم'}</p>
+                <p className="text-xs text-muted-foreground mt-1">{q.teacher?.fullName || 'معلم'}</p>
               </CardContent>
             </Card>
           ))}

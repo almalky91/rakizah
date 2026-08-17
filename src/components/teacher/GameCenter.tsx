@@ -1,26 +1,21 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { gameApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Gamepad2, Plus, Trash2, Pencil } from 'lucide-react';
+import { Brain, Plus, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-interface Game {
-  id: string;
-  title: string;
-  game_type: 'wheel' | 'memory';
-  config: any;
-  created_at: string;
-}
+import type { Game as GameType } from '@/db/schema/content';
 
 const GameCenter = () => {
   const { user } = useAuth();
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<GameType[]>([]);
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [gameTitle, setGameTitle] = useState('');
@@ -29,12 +24,13 @@ const GameCenter = () => {
   const [memoryPairs, setMemoryPairs] = useState([{ term: '', match: '' }]);
 
   const fetchGames = async () => {
-    const { data } = await supabase
-      .from('games')
-      .select('*')
-      .eq('teacher_id', user?.id)
-      .order('created_at', { ascending: false });
-    setGames((data as any) || []);
+    if (!user) return;
+    try {
+      const data = await gameApi.list(user.id);
+      setGames(data);
+    } catch (error) {
+      console.error('Failed to fetch games:', error);
+    }
   };
 
   useEffect(() => { if (user) fetchGames(); }, [user]);
@@ -47,14 +43,15 @@ const GameCenter = () => {
     setEditingId(null);
   };
 
-  const openEdit = (g: Game) => {
+  const openEdit = (g: GameType) => {
     setEditingId(g.id);
     setGameTitle(g.title);
-    setGameType(g.game_type);
-    if (g.game_type === 'wheel') {
-      setWheelItems(g.config?.items?.length ? g.config.items : ['', '', '', '']);
+    setGameType(g.gameType as 'wheel' | 'memory');
+    const config = g.config as any;
+    if (g.gameType === 'wheel') {
+      setWheelItems(config?.items?.length ? config.items : ['', '', '', '']);
     } else {
-      setMemoryPairs(g.config?.pairs?.length ? g.config.pairs : [{ term: '', match: '' }]);
+      setMemoryPairs(config?.pairs?.length ? config.pairs : [{ term: '', match: '' }]);
     }
     setOpen(true);
   };
@@ -65,45 +62,50 @@ const GameCenter = () => {
       ? { items: wheelItems.filter(Boolean) }
       : { pairs: memoryPairs.filter(p => p.term && p.match) };
 
-    if (editingId) {
-      const { error } = await supabase.from('games').update({
-        title: gameTitle,
-        game_type: gameType,
-        config,
-      }).eq('id', editingId);
-      if (error) { toast.error('فشل في تحديث اللعبة'); return; }
-      toast.success('تم تحديث اللعبة');
-    } else {
-      const { error } = await supabase.from('games').insert({
-        title: gameTitle,
-        game_type: gameType,
-        config,
-        teacher_id: user?.id,
-      });
-      if (error) { toast.error('فشل في حفظ اللعبة'); return; }
-      toast.success('تم حفظ اللعبة');
+    try {
+      if (editingId) {
+        await gameApi.update(editingId, {
+          title: gameTitle,
+          gameType: gameType,
+          config,
+        });
+        toast.success('تم تحديث اللعبة');
+      } else {
+        await gameApi.create({
+          title: gameTitle,
+          gameType: gameType,
+          config,
+        });
+        toast.success('تم حفظ اللعبة');
+      }
+      resetForm();
+      setOpen(false);
+      fetchGames();
+    } catch (error) {
+      toast.error(editingId ? 'فشل في تحديث اللعبة' : 'فشل في حفظ اللعبة');
     }
-    resetForm();
-    setOpen(false);
-    fetchGames();
   };
 
   const deleteGame = async (id: string) => {
-    await supabase.from('games').delete().eq('id', id);
-    toast.success('تم حذف اللعبة');
-    fetchGames();
+    try {
+      await gameApi.delete(id);
+      toast.success('تم حذف اللعبة');
+      fetchGames();
+    } catch (error) {
+      toast.error('فشل في حذف اللعبة');
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Gamepad2 className="w-6 h-6 text-primary" />
-          مركز الألعاب
+          <Brain className="w-6 h-6 text-primary" />
+          مركز المهارات
         </h2>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إنشاء لعبة</Button>
+            <Button variant="hero" size="sm"><Plus className="w-4 h-4 ml-1" />إضافة مهارة</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editingId ? 'تعديل اللعبة' : 'إنشاء لعبة جديدة'}</DialogTitle></DialogHeader>
@@ -169,7 +171,7 @@ const GameCenter = () => {
       {games.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12 text-muted-foreground">
-            <Gamepad2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
+            <Brain className="w-12 h-12 mx-auto mb-4 opacity-30" />
             <p>لا توجد ألعاب بعد</p>
           </CardContent>
         </Card>
@@ -182,7 +184,7 @@ const GameCenter = () => {
                   <div>
                     <h3 className="font-semibold text-lg mb-1">{g.title}</h3>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent/20 text-accent-foreground">
-                      {g.game_type === 'wheel' ? 'عجلة دوارة' : 'لعبة ذاكرة'}
+                      {g.gameType === 'wheel' ? 'عجلة دوارة' : 'لعبة ذاكرة'}
                     </span>
                   </div>
                   <div className="flex gap-1">

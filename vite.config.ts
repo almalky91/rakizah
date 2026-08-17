@@ -7,12 +7,16 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 5173,
     hmr: {
       overlay: false,
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  define: {
+    // Define process.env for browser compatibility with next-auth
+    'process.env': {},
+  },
   build: {
     rollupOptions: {
       output: {
@@ -30,4 +34,11 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
+  test: {
+    server: {
+      deps: {
+        inline: ['drizzle-orm', 'drizzle-kit']
+      }
+    }
+  }
 }));

@@ -1,10 +1,9 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Gamepad2, Video, Trophy, Users, ArrowLeft, Quote, GraduationCap, ClipboardList, MessageCircle, Star } from 'lucide-react';
 import logoImg from '@/assets/logo.jpg';
 import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 function AnimatedCounter({ target, duration = 2 }: { target: number; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -43,22 +42,23 @@ const scaleIn = {
 };
 
 const LandingPage = () => {
-  const [stats, setStats] = useState({ teachers: 0, quizzes: 0, students: 0 });
+  // TODO: Create a stats API endpoint to fetch real-time statistics
+  // For now, using static placeholder values
+  const [stats, setStats] = useState({ teachers: 120, quizzes: 350, students: 480 });
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const [teachersRes, quizzesRes, studentsRes] = await Promise.all([
-        supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
-        supabase.from('quizzes').select('id', { count: 'exact', head: true }),
-        supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-      ]);
-      setStats({
-        teachers: Math.max(teachersRes.count ?? 0, 120),
-        quizzes: Math.max(quizzesRes.count ?? 0, 350),
-        students: Math.max(studentsRes.count ?? 0, 480),
-      });
-    };
-    fetchStats();
+    // When stats API is implemented, fetch from /api/stats
+    // Example:
+    // const fetchStats = async () => {
+    //   try {
+    //     const response = await fetch('/api/stats');
+    //     const data = await response.json();
+    //     setStats(data);
+    //   } catch (error) {
+    //     console.error('Failed to fetch stats:', error);
+    //   }
+    // };
+    // fetchStats();
   }, []);
 
   const features = [
@@ -88,12 +88,12 @@ const LandingPage = () => {
             <span className="text-base sm:text-xl font-bold text-primary-foreground">منصتي التعليمية</span>
           </div>
           <div className="flex gap-2 sm:gap-3">
-            <Link to="/login">
+            <Link href="/login">
               <Button variant="outline" size="sm" className="border-primary/30 text-primary-foreground bg-primary/10 hover:bg-primary/20 text-xs sm:text-sm px-2 sm:px-4">
                 تسجيل الدخول
               </Button>
             </Link>
-            <Link to="/register">
+            <Link href="/register">
               <Button variant="hero" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">إنشاء حساب</Button>
             </Link>
           </div>
@@ -132,7 +132,7 @@ const LandingPage = () => {
               transition={{ duration: 0.6, delay: 0.6 }}
               className="flex gap-4 justify-center"
             >
-              <Link to="/register">
+              <Link href="/register">
                 <Button variant="gold" size="sm" className="text-sm sm:text-lg sm:px-8 sm:py-6 px-5">
                   ابدأ الآن مجاناً
                   <ArrowLeft className="w-5 h-5" />
@@ -294,7 +294,7 @@ const LandingPage = () => {
         >
          <h2 className="text-2xl sm:text-3xl font-bold text-primary-foreground mb-2 sm:mb-4">مستعد للبدء؟</h2>
           <p className="text-primary-foreground/80 text-sm sm:text-lg mb-5 sm:mb-8">انضم إلى المنصة وابدأ رحلتك التعليمية اليوم</p>
-          <Link to="/register">
+          <Link href="/register">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <Button variant="gold" size="sm" className="text-sm sm:text-lg sm:px-8 sm:py-3">
                 سجّل الآن

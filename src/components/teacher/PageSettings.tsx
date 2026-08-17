@@ -1,14 +1,16 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Eye, Check, User, Link2, Lock, Mail, CalendarDays, Phone } from 'lucide-react';
+import { Save, Palette, Eye, Check, User, Mail, CalendarDays, Phone, Lock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { profileApi, authApi } from '@/lib/api-client';
 
 const TEMPLATES = [
   {
@@ -82,7 +84,6 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
@@ -91,48 +92,52 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<Date | null>(null);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
-  const siteUrl = 'https://rakizah.lovable.app';
+  const siteUrl = window.location.origin;
   const currentPublicLink = publicSlug ? `${siteUrl}/p/${publicSlug}` : '';
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('full_name, email, public_slug, page_title, school_name, bio, page_template, subscription_active, subscription_ends_at, phone_number')
-        .eq('id', user.id)
-        .single();
-      if (data) {
-        setFullName(data.full_name || '');
-        setEmail(data.email || '');
-        setOriginalEmail(data.email || '');
-        setPublicSlug(data.public_slug || '');
-        setPageTitle(data.page_title || '');
-        setSchoolName((data as any).school_name || '');
-        setBio((data as any).bio || '');
-        setSelectedTemplate((data as any).page_template || 'classic');
-        setPhoneNumber((data as any).phone_number || '');
-        setSubscriptionActive((data as any).subscription_active || false);
-        setSubscriptionEndsAt((data as any).subscription_ends_at ? new Date((data as any).subscription_ends_at) : null);
+
+      try {
+        const profile = await profileApi.get(user.id);
+        
+        setFullName(profile.fullName || '');
+        setEmail(profile.email || '');
+        setOriginalEmail(profile.email || '');
+        setPublicSlug(profile.publicSlug || '');
+        setPageTitle(profile.pageTitle || '');
+        setSchoolName(profile.schoolName || '');
+        setBio(profile.bio || '');
+        setSelectedTemplate(profile.pageTemplate || 'classic');
+        setPhoneNumber(profile.phoneNumber || '');
+        setSubscriptionActive(profile.subscriptionActive || false);
+        setSubscriptionEndsAt(profile.subscriptionEndsAt ? new Date(profile.subscriptionEndsAt) : null);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast.error('فشل في تحميل البيانات');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
+
     fetchProfile();
   }, [user]);
 
   const handleChangeEmail = async () => {
     if (!user || !email || email === originalEmail) return;
+
     setSavingEmail(true);
-    const { error } = await supabase.auth.updateUser({ email });
-    if (error) {
-      toast.error('حدث خطأ أثناء تغيير البريد الإلكتروني');
-    } else {
-      // Update profile table too
-      await supabase.from('profiles').update({ email } as any).eq('id', user.id);
+    try {
+      await authApi.changeEmail(email);
       setOriginalEmail(email);
-      toast.success('تم إرسال رابط تأكيد إلى بريدك الإلكتروني الجديد');
+      toast.success('تم تحديث البريد الإلكتروني بنجاح');
+    } catch (error) {
+      console.error('Error changing email:', error);
+      toast.error('حدث خطأ أثناء تغيير البريد الإلكتروني');
+    } finally {
+      setSavingEmail(false);
     }
-    setSavingEmail(false);
   };
 
   const handleChangePassword = async () => {
@@ -148,22 +153,24 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
       toast.error('كلمة المرور الجديدة غير متطابقة');
       return;
     }
+
     setSavingPassword(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) {
-      toast.error('حدث خطأ أثناء تغيير كلمة المرور');
-    } else {
+    try {
+      await authApi.changePassword(newPassword, confirmPassword);
       toast.success('تم تغيير كلمة المرور بنجاح');
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('حدث خطأ أثناء تغيير كلمة المرور');
+    } finally {
+      setSavingPassword(false);
     }
-    setSavingPassword(false);
   };
 
   const handleSave = async () => {
     if (!user) return;
-    
+
     // Validate slug
     const slugClean = publicSlug.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
     if (slugClean && slugClean.length < 3) {
@@ -173,46 +180,48 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
 
     setSaving(true);
 
-    // Check slug uniqueness
-    if (slugClean) {
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('public_slug', slugClean)
-        .neq('id', user.id)
-        .maybeSingle();
-      if (existing) {
-        toast.error('هذا الرابط مستخدم بالفعل، اختر رابطاً آخر');
-        setSaving(false);
-        return;
-      }
-    }
+    try {
+      // Update profile with API - only send fields with actual values
+      const updateData: any = {
+        pageTemplate: selectedTemplate, // Always include template
+        fullName,
+        email,
+        slugClean,
+        pageTitle,
+        schoolName,
+        bio,
+        phoneNumber,
+      };
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: fullName || null,
-        email: email || null,
-        public_slug: slugClean || null,
-        page_title: pageTitle || null,
-        school_name: schoolName || null,
-        bio: bio || null,
-        page_template: selectedTemplate,
-        phone_number: phoneNumber || null,
-      } as any)
-      .eq('id', user.id)
-      .select('public_slug')
-      .single();
-    
-    if (error) {
-      toast.error('حدث خطأ أثناء الحفظ');
-    } else {
-      const savedSlug = (data as any)?.public_slug || null;
+      // Only include fields that have actual values
+      // if (fullName) updateData.fullName = fullName;
+      // if (email) updateData.email = email;
+      // if (slugClean) updateData.publicSlug = slugClean;
+      // if (pageTitle) updateData.pageTitle = pageTitle;
+      // if (schoolName) updateData.schoolName = schoolName;
+      // if (bio) updateData.bio = bio;
+      // if (phoneNumber) updateData.phoneNumber = phoneNumber;
+
+      const updatedProfile = await profileApi.update(user.id, updateData);
+
+      const savedSlug = updatedProfile.publicSlug || null;
       setPublicSlug(savedSlug || '');
       onPublicSlugChange?.(savedSlug);
       toast.success('تم حفظ الإعدادات بنجاح');
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      
+      // Handle specific error messages
+      if (error?.message?.includes('slug already taken') || error?.message?.includes('Public slug already taken')) {
+        toast.error('هذا الرابط مستخدم بالفعل، اختر رابطاً آخر');
+      } else if (error?.message?.includes('Email already taken')) {
+        toast.error('هذا البريد الإلكتروني مستخدم بالفعل');
+      } else {
+        toast.error('حدث خطأ أثناء الحفظ');
+      }
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   if (loading) {
@@ -319,7 +328,9 @@ const PageSettings = ({ onPublicSlugChange }: PageSettingsProps) => {
                 </Button>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">عند تغيير البريد سيتم إرسال رابط تأكيد للبريد الجديد</p>
+            <p className="text-xs text-muted-foreground">
+              عند تغيير البريد سيتم تحديثه مباشرة
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="publicSlug">رابط الصفحة العامة</Label>

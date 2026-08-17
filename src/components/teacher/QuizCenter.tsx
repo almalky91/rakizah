@@ -1,5 +1,6 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,18 +12,22 @@ import QuestionBank from './QuestionBank';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { quizApi } from '@/lib/api-client';
 
-interface Question {
+// QuizQuestion type definition for form state
+interface QuizQuestion {
   question: string;
   options: string[];
-  correct: number;
+  correctAnswer: string;
 }
 
+// Quiz type from API client
 interface Quiz {
   id: string;
+  teacherId: string;
   title: string;
-  questions: Question[];
-  created_at: string;
+  questions: QuizQuestion[] | any; // Can be array or parsed JSON
+  createdAt: Date | string;
 }
 
 const QuizCenter = () => {
@@ -32,23 +37,23 @@ const QuizCenter = () => {
   const [bankOpen, setBankOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState('');
-  const [questions, setQuestions] = useState<Question[]>([
-    { question: '', options: ['', '', '', ''], correct: 0 },
+  const [questions, setQuestions] = useState<QuizQuestion[]>([
+    { question: '', options: ['', '', '', ''], correctAnswer: '' },
   ]);
 
   const fetchQuizzes = async () => {
-    const { data } = await supabase
-      .from('quizzes')
-      .select('*')
-      .eq('teacher_id', user?.id)
-      .order('created_at', { ascending: false });
-    setQuizzes((data as any) || []);
+    try {
+      const data = await quizApi.list(user?.id);
+      setQuizzes(data);
+    } catch (error) {
+      toast.error('فشل في تحميل الاختبارات');
+    }
   };
 
   useEffect(() => { if (user) fetchQuizzes(); }, [user]);
 
   const addQuestion = () => {
-    setQuestions([...questions, { question: '', options: ['', '', '', ''], correct: 0 }]);
+    setQuestions([...questions, { question: '', options: ['', '', '', ''], correctAnswer: '' }]);
   };
 
   const removeQuestion = (idx: number) => {
@@ -58,7 +63,7 @@ const QuizCenter = () => {
   const updateQuestion = (idx: number, field: string, value: any) => {
     const updated = [...questions];
     if (field === 'question') updated[idx].question = value;
-    else if (field === 'correct') updated[idx].correct = parseInt(value);
+    else if (field === 'correctAnswer') updated[idx].correctAnswer = value;
     setQuestions(updated);
   };
 
@@ -70,47 +75,65 @@ const QuizCenter = () => {
 
   const resetForm = () => {
     setQuizTitle('');
-    setQuestions([{ question: '', options: ['', '', '', ''], correct: 0 }]);
+    setQuestions([{ question: '', options: ['', '', '', ''], correctAnswer: '' }]);
     setEditingId(null);
   };
 
   const openEdit = (q: Quiz) => {
     setEditingId(q.id);
     setQuizTitle(q.title);
-    setQuestions(q.questions?.length ? q.questions : [{ question: '', options: ['', '', '', ''], correct: 0 }]);
+    // Ensure questions is an array - parse if string, fallback to default if not array
+    let questionsArray: QuizQuestion[];
+    if (typeof q.questions === 'string') {
+      try {
+        questionsArray = JSON.parse(q.questions);
+      } catch {
+        questionsArray = [{ question: '', options: ['', '', '', ''], correctAnswer: '' }];
+      }
+    } else if (Array.isArray(q.questions) && q.questions.length > 0) {
+      questionsArray = q.questions;
+    } else {
+      questionsArray = [{ question: '', options: ['', '', '', ''], correctAnswer: '' }];
+    }
+    setQuestions(questionsArray);
     setOpen(true);
   };
 
   const saveQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
-    const valid = questions.every(q => q.question && q.options.every(o => o));
-    if (!valid) { toast.error('يرجى ملء جميع الحقول'); return; }
+    const valid = questions.every(q => q.question && q.options.every(o => o) && q.correctAnswer);
+    if (!valid) { toast.error('يرجى ملء جميع الحقول واختيار الإجابة الصحيحة'); return; }
 
-    if (editingId) {
-      const { error } = await supabase.from('quizzes').update({
-        title: quizTitle,
-        questions: questions as any,
-      }).eq('id', editingId);
-      if (error) { toast.error('فشل في تحديث الاختبار'); return; }
-      toast.success('تم تحديث الاختبار');
-    } else {
-      const { error } = await supabase.from('quizzes').insert({
-        title: quizTitle,
-        questions: questions as any,
-        teacher_id: user?.id!,
-      } as any);
-      if (error) { toast.error('فشل في حفظ الاختبار'); return; }
-      toast.success('تم حفظ الاختبار');
+    try {
+      if (editingId) {
+        await quizApi.update(editingId, {
+          title: quizTitle,
+          questions: questions,
+        });
+        toast.success('تم تحديث الاختبار');
+      } else {
+        await quizApi.create({
+          title: quizTitle,
+          questions: questions,
+        });
+        toast.success('تم حفظ الاختبار');
+      }
+      resetForm();
+      setOpen(false);
+      fetchQuizzes();
+    } catch (error) {
+      toast.error(editingId ? 'فشل في تحديث الاختبار' : 'فشل في حفظ الاختبار');
     }
-    resetForm();
-    setOpen(false);
-    fetchQuizzes();
   };
 
   const deleteQuiz = async (id: string) => {
-    await supabase.from('quizzes').delete().eq('id', id);
-    toast.success('تم حذف الاختبار');
-    fetchQuizzes();
+    try {
+      await quizApi.delete(id);
+      toast.success('تم حذف الاختبار');
+      fetchQuizzes();
+    } catch (error) {
+      toast.error('فشل في حذف الاختبار');
+    }
   };
 
   return (
@@ -136,7 +159,7 @@ const QuizCenter = () => {
                 <Input value={quizTitle} onChange={e => setQuizTitle(e.target.value)} required placeholder="مثال: اختبار الوحدة الأولى" />
               </div>
 
-              {questions.map((q, qIdx) => (
+              {questions?.map((q, qIdx) => (
                 <Card key={qIdx} className="relative">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -150,11 +173,17 @@ const QuizCenter = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <Textarea value={q.question} onChange={e => updateQuestion(qIdx, 'question', e.target.value)} placeholder="نص السؤال" required />
-                    <RadioGroup value={String(q.correct)} onValueChange={v => updateQuestion(qIdx, 'correct', v)}>
+                    <RadioGroup value={q.correctAnswer} onValueChange={v => updateQuestion(qIdx, 'correctAnswer', v)}>
                       {q.options.map((opt, oIdx) => (
                         <div key={oIdx} className="flex items-center gap-3">
-                          <RadioGroupItem value={String(oIdx)} id={`q${qIdx}-o${oIdx}`} />
-                          <Input value={opt} onChange={e => updateOption(qIdx, oIdx, e.target.value)} placeholder={`الخيار ${oIdx + 1}`} required className="flex-1" />
+                          <RadioGroupItem value={opt || `__empty_${oIdx}`} id={`q${qIdx}-o${oIdx}`} disabled={!opt} />
+                          <Input value={opt} onChange={e => {
+                            const newValue = e.target.value;
+                            updateOption(qIdx, oIdx, newValue);
+                            if (q.correctAnswer === opt && opt !== '') {
+                              updateQuestion(qIdx, 'correctAnswer', newValue);
+                            }
+                          }} placeholder={`الخيار ${oIdx + 1}`} required className="flex-1" />
                         </div>
                       ))}
                     </RadioGroup>
@@ -175,7 +204,7 @@ const QuizCenter = () => {
 
       <QuestionBank open={bankOpen} onOpenChange={setBankOpen} onImported={fetchQuizzes} />
 
-      {quizzes.length === 0 ? (
+      {quizzes?.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12 text-muted-foreground">
             <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
@@ -184,26 +213,41 @@ const QuizCenter = () => {
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {quizzes.map(q => (
-            <Card key={q.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">{q.title}</h3>
-                    <p className="text-sm text-muted-foreground">{q.questions?.length || 0} سؤال</p>
+          {quizzes?.map(q => {
+            // Safely get questions count
+            let questionsCount = 0;
+            if (Array.isArray(q.questions)) {
+              questionsCount = q.questions.length;
+            } else if (typeof q.questions === 'string') {
+              try {
+                const parsed = JSON.parse(q.questions);
+                questionsCount = Array.isArray(parsed) ? parsed.length : 0;
+              } catch {
+                questionsCount = 0;
+              }
+            }
+
+            return (
+              <Card key={q.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">{q.title}</h3>
+                      <p className="text-sm text-muted-foreground">{questionsCount} سؤال</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(q)} className="text-primary hover:text-primary">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteQuiz(q.id)} className="text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(q)} className="text-primary hover:text-primary">
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteQuiz(q.id)} className="text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,7 +1,9 @@
+'use client';
+
 import { forwardRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
 import { questionBankData, BankCategory, BankModel } from '@/data/questionBank';
+import { quizApi } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -63,12 +65,10 @@ const QuestionBank = forwardRef<HTMLDivElement, QuestionBankProps>(({ open, onOp
     if (!user) return;
     setImporting(true);
     try {
-      const { error } = await supabase.from('quizzes').insert({
+      await quizApi.create({
         title: model.title,
-        questions: model.questions as any,
-        teacher_id: user.id,
-      } as any);
-      if (error) throw error;
+        questions: model.questions,
+      });
       toast.success('تم استيراد النموذج بنجاح! يمكنك تعديله من اختباراتك');
       onImported();
       handleClose(false);

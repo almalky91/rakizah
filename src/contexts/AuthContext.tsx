@@ -1,6 +1,16 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
+'use client';
+
+import React, { createContext, useContext, useState } from 'react';
+import { useSession, signIn as nextAuthSignIn, signOut as nextAuthSignOut } from 'next-auth/react';
+import type { Session } from 'next-auth';
+
+// Define User type compatible with NextAuth session
+interface User {
+  id: string;
+  email: string;
+  name?: string | null;
+  role: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -15,62 +25,74 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
-    setUserRole(data?.role || 'student');
-  };
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => fetchRole(session.user.id), 0);
-        } else {
-          setUserRole(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchRole(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { data: session, status } = useSession();
+  const [error, setError] = useState<string | null>(null);
+  
+  // Derive loading state from NextAuth session status
+  // 'loading' means NextAuth is still initializing the session
+  // This prevents rendering protected content before authentication is verified
+  const loading = status === 'loading';
+  
+  // Derive user and role from session
+  // Returns null if session is not yet loaded or user is not authenticated
+  const user: User | null = session?.user ?? null;
+  const userRole = session?.user?.role ?? null;
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    try {
+      const result = await nextAuthSignIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      if (!result?.ok) {
+        throw new Error('Authentication failed');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Sign in failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
-    if (error) throw error;
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, fullName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      // Automatically sign in after successful registration
+      await signIn(email, password);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Sign up failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await nextAuthSignOut({ redirect: true, callbackUrl: '/login' });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Sign out failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   return (

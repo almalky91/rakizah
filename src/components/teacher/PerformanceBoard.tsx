@@ -1,5 +1,6 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,79 +8,110 @@ import { BarChart3, Eye, Trophy, Users, FileText, Star, Trash2 } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { quizResultsApi, videoViewsApi } from '@/lib/api-client';
 
 interface PublicResult {
   id: string;
-  student_name: string;
+  studentName: string;
   score: number;
-  total_questions: number;
-  quiz_title: string;
-  created_at: string;
+  totalQuestions: number;
+  quizTitle: string;
+  createdAt: string;
 }
 
 const PerformanceBoard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState({ totalViews: 0, publicStudents: 0, avgScore: 0, totalQuizAttempts: 0 });
   const [publicResults, setPublicResults] = useState<PublicResult[]>([]);
-
-  
+  const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     if (!user) return;
-    const [videoViewsRes, publicResRes, quizzesRes] = await Promise.all([
-      supabase.from('public_video_views').select('id').eq('teacher_id', user.id),
-      supabase.from('public_quiz_results').select('*').eq('teacher_id', user.id).order('created_at', { ascending: false }),
-      supabase.from('quizzes').select('id, title').eq('teacher_id', user.id),
-    ]);
 
-    const totalViews = videoViewsRes.data?.length || 0;
-    const publicData = (publicResRes.data as any[]) || [];
-    const quizMap = new Map((quizzesRes.data || []).map(q => [q.id, q.title]));
+    try {
+      setLoading(true);
 
-    const uniquePublicStudents = new Set(publicData.map(r => r.student_name));
-    const avgScore = publicData.length
-      ? Math.round(publicData.reduce((sum, r) => sum + (r.score / r.total_questions) * 100, 0) / publicData.length)
-      : 0;
+      // Fetch data from API endpoints in parallel
+      const [videoViewsData, publicResultsData] = await Promise.all([
+        videoViewsApi.getPublicByTeacher(user.id),
+        quizResultsApi.getPublicByTeacher(user.id),
+      ]);
 
-    setStats({
-      totalViews,
-      publicStudents: uniquePublicStudents.size,
-      avgScore,
-      totalQuizAttempts: publicData.length,
-    });
+      const totalViews = videoViewsData?.length || 0;
+      const publicData = publicResultsData || [];
 
-    setPublicResults(
-      publicData.map(r => ({
-        id: r.id,
-        student_name: r.student_name,
-        score: r.score,
-        total_questions: r.total_questions,
-        quiz_title: quizMap.get(r.quiz_id) || 'اختبار محذوف',
-        created_at: r.created_at,
-      }))
-    );
+      // Calculate statistics
+      const uniquePublicStudents = new Set(publicData.map((r: any) => r.studentName));
+      const avgScore = publicData.length
+        ? Math.round(
+            publicData.reduce((sum: number, r: any) => sum + (r.score / r.totalQuestions) * 100, 0) /
+              publicData.length
+          )
+        : 0;
+
+      setStats({
+        totalViews,
+        publicStudents: uniquePublicStudents.size,
+        avgScore,
+        totalQuizAttempts: publicData.length,
+      });
+
+      // Map results with quiz titles already included from API
+      setPublicResults(
+        publicData.map((r: any) => ({
+          id: r.id,
+          studentName: r.studentName,
+          score: r.score,
+          totalQuestions: r.totalQuestions,
+          quizTitle: r.quizTitle || 'اختبار محذوف',
+          createdAt: r.createdAt,
+        }))
+      );
+    } catch (error) {
+      console.error('Error fetching performance data:', error);
+      toast.error('فشل في تحميل البيانات');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchData(); }, [user]);
+  useEffect(() => {
+    fetchData();
+  }, [user]);
 
   const deleteResult = async (id: string) => {
-    const { error } = await supabase.from('public_quiz_results').delete().eq('id', id);
-    if (error) { toast.error('فشل في الحذف'); return; }
-    toast.success('تم حذف النتيجة');
-    fetchData();
+    try {
+      await quizResultsApi.deletePublic(id);
+      toast.success('تم حذف النتيجة');
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting result:', error);
+      toast.error('فشل في الحذف');
+    }
   };
 
   const deleteStudentResults = async (studentName: string) => {
     if (!user) return;
-    const { error } = await supabase.from('public_quiz_results').delete().eq('teacher_id', user.id).eq('student_name', studentName);
-    if (error) { toast.error('فشل في الحذف'); return; }
-    await supabase.from('public_video_views').delete().eq('teacher_id', user.id).eq('student_name', studentName);
-    toast.success(`تم حذف جميع بيانات الطالب "${studentName}"`);
-    fetchData();
+
+    try {
+      await quizResultsApi.deleteStudentData(user.id, studentName);
+      toast.success(`تم حذف جميع بيانات الطالب "${studentName}"`);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting student data:', error);
+      toast.error('فشل في الحذف');
+    }
   };
 
-  const uniqueStudents = [...new Set(publicResults.map(r => r.student_name))];
+  const uniqueStudents = [...new Set(publicResults.map((r) => r.studentName))];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -148,18 +180,30 @@ const PerformanceBoard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {uniqueStudents.map(name => {
-                const studentResults = publicResults.filter(r => r.student_name === name);
-                const avgPct = Math.round(studentResults.reduce((s, r) => s + (r.score / r.total_questions) * 100, 0) / studentResults.length);
+              {uniqueStudents.map((name) => {
+                const studentResults = publicResults.filter((r) => r.studentName === name);
+                const avgPct = Math.round(
+                  studentResults.reduce((s, r) => s + (r.score / r.totalQuestions) * 100, 0) /
+                    studentResults.length
+                );
                 return (
-                  <div key={name} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border/50">
+                  <div
+                    key={name}
+                    className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border/50"
+                  >
                     <div>
                       <p className="font-semibold text-sm">{name}</p>
-                      <p className="text-xs text-muted-foreground">{studentResults.length} اختبار · {avgPct}%</p>
+                      <p className="text-xs text-muted-foreground">
+                        {studentResults.length} اختبار · {avgPct}%
+                      </p>
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </AlertDialogTrigger>
@@ -167,12 +211,16 @@ const PerformanceBoard = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>حذف بيانات الطالب</AlertDialogTitle>
                           <AlertDialogDescription>
-                            هل أنت متأكد من حذف جميع نتائج ومشاهدات الطالب "{name}"؟ لا يمكن التراجع عن هذا الإجراء.
+                            هل أنت متأكد من حذف جميع نتائج ومشاهدات الطالب "{name}"؟ لا يمكن
+                            التراجع عن هذا الإجراء.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteStudentResults(name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          <AlertDialogAction
+                            onClick={() => deleteStudentResults(name)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
                             حذف
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -195,7 +243,9 @@ const PerformanceBoard = () => {
         </CardHeader>
         <CardContent>
           {publicResults.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">لا توجد نتائج بعد. شارك رابط صفحتك العامة مع الطلاب!</p>
+            <p className="text-center py-8 text-muted-foreground">
+              لا توجد نتائج بعد. شارك رابط صفحتك العامة مع الطلاب!
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -210,27 +260,38 @@ const PerformanceBoard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {publicResults.map(r => {
-                    const pct = Math.round((r.score / r.total_questions) * 100);
+                  {publicResults.map((r) => {
+                    const pct = Math.round((r.score / r.totalQuestions) * 100);
                     return (
                       <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.student_name}</TableCell>
-                        <TableCell>{r.quiz_title}</TableCell>
-                        <TableCell className="text-center">{r.score}/{r.total_questions}</TableCell>
+                        <TableCell className="font-medium">{r.studentName}</TableCell>
+                        <TableCell>{r.quizTitle}</TableCell>
                         <TableCell className="text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                            pct >= 80 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                            pct >= 50 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                          }`}>
+                          {r.score}/{r.totalQuestions}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                              pct >= 80
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : pct >= 50
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            }`}
+                          >
                             {pct}%
                           </span>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(r.created_at).toLocaleDateString('ar-SA')}
+                          {new Date(r.createdAt).toLocaleDateString('ar-SA')}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button variant="ghost" size="icon" onClick={() => deleteResult(r.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteResult(r.id)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+                          >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </TableCell>

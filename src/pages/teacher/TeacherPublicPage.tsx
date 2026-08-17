@@ -1,8 +1,11 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { teacherApi, type TeacherSkillResponse } from '@/lib/api/teacherApi';
+import { profileApi, quizApi, videoApi, quizResultsApi } from '@/lib/api-client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Gamepad2, Video } from 'lucide-react';
+import { BookOpen, Brain, Gamepad2, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import PublicBanner from '@/components/public/PublicBanner';
 import PublicNameGate from '@/components/public/PublicNameGate';
@@ -13,33 +16,71 @@ import PublicQuizList from '@/components/public/PublicQuizList';
 import PublicGameList from '@/components/public/PublicGameList';
 import PublicVideoList from '@/components/public/PublicVideoList';
 import PublicLeaderboard from '@/components/public/PublicLeaderboard';
+import PublicSkillList from '@/components/public/PublicSkillList';
+import type { Quiz, Game, Video as VideoType } from '@/db/schema/content';
 
-interface Question {
-  question: string;
-  options: string[];
-  correct: number;
+// Legacy Skill interface for backward compatibility with PublicSkillList component
+// This component still expects the old nested structure from Supabase
+export interface Skill {
+  skills: {
+    id: string;
+    field_id: string;
+    grade_id: string;
+    skill_number: string;
+    title: string;
+    description: string;
+    difficulty_level: string;
+    is_active: boolean;
+    display_order: number;
+    created_at: string;
+    fields: {
+      subjects: {
+        id: string;
+        name: string;
+        color?: string;
+      }
+    }
+  };
 }
 
-export interface Quiz {
-  id: string;
-  title: string;
-  questions: Question[];
+/**
+ * Transform API response to match the expected Skill interface for PublicSkillList
+ */
+function transformApiSkillToSkill(apiSkill: TeacherSkillResponse): Skill {
+  // Handle createdAt conversion - convert Date to ISO string if needed
+  let createdAtString: string;
+  if (apiSkill.createdAt instanceof Date) {
+    createdAtString = apiSkill.createdAt.toISOString();
+  } else if (typeof apiSkill.createdAt === 'string') {
+    createdAtString = apiSkill.createdAt;
+  } else {
+    // Fallback to current date if createdAt is undefined/null
+    createdAtString = new Date().toISOString();
+  }
+
+  return {
+    skills: {
+      id: apiSkill.id,
+      field_id: apiSkill.field.id,
+      grade_id: apiSkill.grade.id,
+      skill_number: String(apiSkill.skillNumber),
+      title: apiSkill.title,
+      description: '', // Not available in API response
+      difficulty_level: apiSkill.difficultyLevel,
+      is_active: true, // Assume active since it's returned
+      display_order: apiSkill.displayOrder,
+      created_at: createdAtString,
+      fields: {
+        subjects: {
+          id: apiSkill.subject?.id || '',
+          name: apiSkill.subject?.name || 'غير محدد',
+        }
+      }
+    }
+  };
 }
 
-export interface Game {
-  id: string;
-  title: string;
-  game_type: 'wheel' | 'memory';
-  config: any;
-}
-
-export interface VideoItem {
-  id: string;
-  title: string;
-  youtube_url: string;
-  views: number;
-}
-
+// Teacher profile interface - subset of Profile from @/db/schema/auth
 interface TeacherProfile {
   full_name: string | null;
   school_name: string | null;
@@ -55,7 +96,8 @@ const TeacherPublicPage = () => {
   const [profile, setProfile] = useState<TeacherProfile>({ full_name: null, school_name: null, page_title: null, bio: null, page_template: 'classic', phone_number: null });
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [games, setGames] = useState<Game[]>([]);
-  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [videos, setVideos] = useState<VideoType[]>([]);
   const [studentName, setStudentName] = useState('');
   const [nameConfirmed, setNameConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -68,47 +110,86 @@ const TeacherPublicPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!slug) return;
-      // Resolve slug to teacher ID
-      const profileRes = await supabase.from('profiles').select('id, full_name, school_name, page_title, bio, page_template, phone_number').eq('public_slug', slug as any).single();
-      if (!profileRes.data) { setLoading(false); return; }
-      const tid = (profileRes.data as any).id;
-      setTeacherId(tid);
-      const [quizzesRes, gamesRes, videosRes] = await Promise.all([
-        supabase.from('quizzes').select('*').eq('teacher_id', tid).order('created_at', { ascending: false }),
-        supabase.from('games').select('*').eq('teacher_id', tid).order('created_at', { ascending: false }),
-        supabase.from('videos').select('*').eq('teacher_id', tid).order('created_at', { ascending: false }),
-      ]);
-      setProfile({
-        full_name: (profileRes.data as any)?.full_name || 'معلم',
-        school_name: (profileRes.data as any)?.school_name || null,
-        page_title: (profileRes.data as any)?.page_title || null,
-        bio: (profileRes.data as any)?.bio || null,
-        page_template: (profileRes.data as any)?.page_template || 'classic',
-        phone_number: (profileRes.data as any)?.phone_number || null,
-      });
-      setQuizzes((quizzesRes.data as any) || []);
-      setGames((gamesRes.data as any) || []);
-      setVideos((videosRes.data as any) || []);
-      setLoading(false);
+      try {
+        // Resolve slug to teacher profile and ID
+        const profileData = await profileApi.getBySlug(slug as string);
+        
+        if (!profileData || !profileData.id) {
+          setLoading(false);
+          return;
+        }
+
+        const tid = profileData.id;
+        setTeacherId(tid);
+        
+        // Fetch quizzes and videos in parallel
+        const [quizzesData, videosData, apiSkills] = await Promise.all([
+          quizApi.list(tid),
+          videoApi.list(tid),
+          teacherApi.getSkills(tid)
+        ]);
+        console.log("hello world")
+        console.log(apiSkills);
+
+        setProfile({
+          full_name: profileData.fullName || 'معلم',
+          school_name: profileData.schoolName || null,
+          page_title: profileData.pageTitle || null,
+          bio: profileData.bio || null,
+          page_template: profileData.pageTemplate || 'classic',
+          phone_number: profileData.phoneNumber || null,
+        });
+        
+        setQuizzes(quizzesData || []);
+
+        // Transform API skills to match the expected Skill interface
+        const transformedSkills = apiSkills.map(transformApiSkillToSkill);
+        setSkills(transformedSkills);
+        
+        setVideos(videosData || []);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching teacher public page data:', error);
+        toast.error('حدث خطأ أثناء تحميل البيانات');
+        setLoading(false);
+      }
     };
     fetchData();
   }, [slug]);
 
   const saveQuizResult = async (quizId: string, score: number, totalQuestions: number, answers: Record<number, number>) => {
     if (!teacherId) return;
-    const { error } = await supabase.from('public_quiz_results' as any).insert({
-      quiz_id: quizId,
-      teacher_id: teacherId,
-      student_name: studentName,
-      score,
-      total_questions: totalQuestions,
-      answers,
-    });
-    if (error) {
-      console.error('Error saving quiz result:', error);
-    } else {
+    
+    try {
+      const answersArray = Object.entries(answers).map(([qIndex, aIndex]) => ({
+        questionIndex: parseInt(qIndex),
+        answerIndex: aIndex,
+      }));
+      
+      console.log('Sending quiz result:', {
+        quizId,
+        teacherId,
+        studentName,
+        score,
+        totalQuestions,
+        answers: answersArray,
+        answersType: Array.isArray(answersArray) ? 'array' : typeof answersArray,
+      });
+      
+      await quizResultsApi.submitPublic({
+        quizId,
+        teacherId,
+        studentName,
+        score,
+        totalQuestions,
+        answers: answersArray,
+      });
+      
       toast.success('تم حفظ نتيجتك بنجاح');
       setLeaderboardKey(k => k + 1);
+    } catch (error) {
+      console.error('Error saving quiz result:', error);
+      toast.error('فشل في حفظ النتيجة');
     }
   };
 
@@ -153,10 +234,15 @@ const TeacherPublicPage = () => {
               <span>الاختبارات</span>
               {quizzes.length > 0 && <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1 sm:px-1.5 py-0.5 rounded-full">{quizzes.length}</span>}
             </TabsTrigger>
-            <TabsTrigger value="games" className="flex items-center gap-1 sm:gap-2 py-2.5 sm:py-3 rounded-xl data-[state=active]:shadow-md text-xs sm:text-sm">
+            {/* <TabsTrigger value="games" className="flex items-center gap-1 sm:gap-2 py-2.5 sm:py-3 rounded-xl data-[state=active]:shadow-md text-xs sm:text-sm">
               <Gamepad2 className="w-4 h-4" />
               <span>الألعاب</span>
               {games.length > 0 && <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1 sm:px-1.5 py-0.5 rounded-full">{games.length}</span>}
+            </TabsTrigger> */}
+            <TabsTrigger value="skills" className="flex items-center gap-1 sm:gap-2 py-2.5 sm:py-3 rounded-xl data-[state=active]:shadow-md text-xs sm:text-sm">
+              <Brain className="w-4 h-4" />
+              <span>المهارات</span>
+              {skills.length > 0 && <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1 sm:px-1.5 py-0.5 rounded-full">{skills.length}</span>}
             </TabsTrigger>
             <TabsTrigger value="videos" className="flex items-center gap-1 sm:gap-2 py-2.5 sm:py-3 rounded-xl data-[state=active]:shadow-md text-xs sm:text-sm">
               <Video className="w-4 h-4" />
@@ -168,9 +254,12 @@ const TeacherPublicPage = () => {
           <TabsContent value="quizzes">
             <PublicQuizList quizzes={quizzes} onStartQuiz={setActiveQuiz} />
           </TabsContent>
-          <TabsContent value="games">
-            <PublicGameList games={games} onStartWheel={setActiveWheel} onStartMemory={setActiveMemory} />
+          <TabsContent value="skills">
+            <PublicSkillList skills={skills}  />
           </TabsContent>
+          {/* <TabsContent value="games">
+            <PublicGameList games={games} onStartWheel={setActiveWheel} onStartMemory={setActiveMemory} />
+          </TabsContent> */}
           <TabsContent value="videos">
             <PublicVideoList videos={videos} studentName={studentName} teacherId={teacherId} onVideoWatched={() => setLeaderboardKey(k => k + 1)} />
           </TabsContent>

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,7 +9,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Quiz } from '@/pages/teacher/TeacherPublicPage';
+import type { Quiz } from '@/db/schema/content';
 
 interface Props {
   quiz: Quiz;
@@ -30,8 +32,28 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
   const [currentQ, setCurrentQ] = useState(0);
   const [direction, setDirection] = useState(0);
 
-  const total = quiz.questions.length;
-  const q = quiz.questions[currentQ];
+  // Parse questions if they're a JSON string
+  let questions: any[] = [];
+  if (Array.isArray(quiz.questions)) {
+    questions = quiz.questions;
+  } else if (typeof quiz.questions === 'string') {
+    try {
+      questions = JSON.parse(quiz.questions);
+    } catch (e) {
+      console.error('Error parsing quiz questions:', e);
+      questions = [];
+    }
+  }
+
+  // Safety check - if no questions, show error and go back
+  if (questions.length === 0) {
+    toast.error('لا يوجد أسئلة في هذا الاختبار');
+    onBack();
+    return null;
+  }
+
+  const total = questions.length;
+  const q = questions[currentQ];
   const progress = ((currentQ + 1) / total) * 100;
   const percentage = Math.round((score / total) * 100);
 
@@ -44,8 +66,14 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
       return;
     }
     let correct = 0;
-    quiz.questions.forEach((q, i) => {
-      if (answers[i] === q.correct) correct++;
+    questions.forEach((q, i) => {
+      // answers[i] is the index of the selected option
+      // q.correctAnswer is the text of the correct option
+      // So we need to compare q.options[answers[i]] with q.correctAnswer
+      const selectedAnswer = q.options?.[answers[i]];
+      if (selectedAnswer === q.correctAnswer) {
+        correct++;
+      }
     });
     setScore(correct);
     setSubmitted(true);
@@ -140,7 +168,7 @@ const PublicQuizView = ({ quiz, studentName, onBack, onSaveResult }: Props) => {
                 value={answers[currentQ] !== undefined ? String(answers[currentQ]) : ''}
                 onValueChange={v => setAnswers({ ...answers, [currentQ]: parseInt(v) })}
               >
-                {q.options.map((opt, oIdx) => (
+                {(q.options || []).map((opt, oIdx) => (
                   <motion.div
                     key={oIdx}
                     initial={{ opacity: 0, x: direction >= 0 ? 30 : -30 }}

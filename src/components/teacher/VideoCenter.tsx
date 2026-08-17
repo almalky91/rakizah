@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { videoApi } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,30 +10,24 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Video, Eye, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-
-interface VideoItem {
-  id: string;
-  title: string;
-  youtube_url: string;
-  views: number;
-  created_at: string;
-}
+import type { Video as VideoType } from '@/db/schema/content';
 
 const VideoCenter = () => {
   const { user } = useAuth();
-  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [videos, setVideos] = useState<VideoType[]>([]);
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchVideos = async () => {
-    const { data } = await supabase
-      .from('videos')
-      .select('*')
-      .eq('teacher_id', user?.id)
-      .order('created_at', { ascending: false });
-    setVideos(data || []);
+    if (!user) return;
+    try {
+      const data = await videoApi.list(user.id);
+      setVideos(data);
+    } catch (error) {
+      console.error('Failed to fetch videos:', error);
+    }
   };
 
   useEffect(() => { if (user) fetchVideos(); }, [user]);
@@ -41,10 +37,10 @@ const VideoCenter = () => {
     return match ? match[1] : null;
   };
 
-  const openEdit = (v: VideoItem) => {
+  const openEdit = (v: VideoType) => {
     setEditingId(v.id);
     setTitle(v.title);
-    setUrl(v.youtube_url);
+    setUrl(v.youtubeUrl);
     setOpen(true);
   };
 
@@ -59,23 +55,30 @@ const VideoCenter = () => {
       return;
     }
 
-    if (editingId) {
-      const { error } = await supabase.from('videos').update({ title, youtube_url: url }).eq('id', editingId);
-      if (error) { toast.error('فشل في تحديث الفيديو'); return; }
-      toast.success('تم تحديث الفيديو');
-    } else {
-      const { error } = await supabase.from('videos').insert({ title, youtube_url: url, teacher_id: user?.id });
-      if (error) { toast.error('فشل في إضافة الفيديو'); return; }
-      toast.success('تم إضافة الفيديو');
+    try {
+      if (editingId) {
+        await videoApi.update(editingId, { title, youtubeUrl: url });
+        toast.success('تم تحديث الفيديو');
+      } else {
+        await videoApi.create({ title, youtubeUrl: url });
+        toast.success('تم إضافة الفيديو');
+      }
+      resetForm();
+      setOpen(false);
+      fetchVideos();
+    } catch (error) {
+      toast.error(editingId ? 'فشل في تحديث الفيديو' : 'فشل في إضافة الفيديو');
     }
-    resetForm(); setOpen(false);
-    fetchVideos();
   };
 
   const deleteVideo = async (id: string) => {
-    await supabase.from('videos').delete().eq('id', id);
-    toast.success('تم حذف الفيديو');
-    fetchVideos();
+    try {
+      await videoApi.delete(id);
+      toast.success('تم حذف الفيديو');
+      fetchVideos();
+    } catch (error) {
+      toast.error('فشل في حذف الفيديو');
+    }
   };
 
   return (
@@ -116,7 +119,7 @@ const VideoCenter = () => {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.map(v => {
-            const ytId = getYouTubeId(v.youtube_url);
+            const ytId = getYouTubeId(v.youtubeUrl);
             return (
               <Card key={v.id} className="overflow-hidden group">
                 <div className="aspect-video bg-muted relative">

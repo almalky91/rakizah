@@ -1,70 +1,44 @@
-import { useState, useEffect } from 'react';
+'use client';
+
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Lock, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface SubscriptionStatus {
-  trialEndsAt: Date | null;
-  subscriptionActive: boolean;
-  subscriptionEndsAt: Date | null;
-  loading: boolean;
-}
+const SubscriptionGate = ({ children, teacher }: { children: React.ReactNode, teacher: any | null }) => {
+  const { signOut } = useAuth();
 
-const SubscriptionGate = ({ children }: { children: React.ReactNode }) => {
-  const { user, signOut } = useAuth();
-  const [status, setStatus] = useState<SubscriptionStatus>({
-    trialEndsAt: null,
-    subscriptionActive: false,
-    subscriptionEndsAt: null,
-    loading: true,
-  });
-
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase
-      .from('profiles')
-      .select('trial_ends_at, subscription_active, subscription_ends_at')
-      .eq('id', user.id)
-      .single()
-      .then(({ data }) => {
-        setStatus({
-          trialEndsAt: data?.trial_ends_at ? new Date(data.trial_ends_at) : null,
-          subscriptionActive: (data as any)?.subscription_active || false,
-          subscriptionEndsAt: (data as any)?.subscription_ends_at ? new Date((data as any).subscription_ends_at) : null,
-          loading: false,
-        });
-      });
-  }, [user?.id]);
-
-  if (status.loading) {
+  if (!teacher || Object.keys(teacher).length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
 
   const now = new Date();
-  const trialActive = status.trialEndsAt && now < status.trialEndsAt;
-  
-  // Check if subscription is active AND not expired
-  const subscriptionValid = status.subscriptionActive && 
-    (!status.subscriptionEndsAt || now < status.subscriptionEndsAt);
-  
+
+  const trialEndsAt = teacher.trialEndsAt ? new Date(teacher.trialEndsAt) : null;
+  const subscriptionEndsAt = teacher.subscriptionEndsAt ? new Date(teacher.subscriptionEndsAt) : null;
+
+  const trialActive = Boolean(trialEndsAt && now < trialEndsAt);
+  const subscriptionValid = Boolean(
+    teacher.subscriptionActive &&
+      subscriptionEndsAt &&
+      now < subscriptionEndsAt
+  );
+
   const hasAccess = subscriptionValid || trialActive;
 
   if (hasAccess) {
     return <>{children}</>;
   }
 
-  // Determine message
   let expiredText = '';
-  if (status.subscriptionEndsAt && now >= status.subscriptionEndsAt) {
-    expiredText = `انتهى الاشتراك السنوي في ${status.subscriptionEndsAt.toLocaleDateString('ar-SA')}`;
-  } else if (status.trialEndsAt) {
-    expiredText = `انتهت الفترة التجريبية في ${status.trialEndsAt.toLocaleDateString('ar-SA')}`;
+  if (subscriptionEndsAt && now >= subscriptionEndsAt) {
+    expiredText = `انتهى الاشتراك السنوي في ${subscriptionEndsAt.toLocaleDateString('ar-SA')}`;
+  } else if (trialEndsAt) {
+    expiredText = `انتهت الفترة التجريبية في ${trialEndsAt.toLocaleDateString('ar-SA')}`;
   } else {
     expiredText = 'لم يتم تعيين فترة تجريبية';
   }
